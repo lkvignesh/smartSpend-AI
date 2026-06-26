@@ -1,5 +1,4 @@
 import { Component, ReactNode } from 'react'
-import { Box, Button, Typography } from '@mui/material'
 
 interface Props { children: ReactNode }
 interface State { hasError: boolean; error?: Error }
@@ -11,37 +10,27 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, info: any) {
-    console.error('=== REACT ERROR BOUNDARY ===')
-    console.error('Error:', error.message)
-    console.error('Stack:', error.stack)
-    console.error('Component Stack:', info.componentStack)
+  componentDidCatch(error: Error, info: { componentStack: string }) {
+    console.error('[ErrorBoundary]', error.message)
+    console.error(info.componentStack)
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <Box sx={{
-          minHeight: '100vh', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', flexDirection: 'column', gap: 2,
-          background: '#0A0A0F', p: 4
-        }}>
-          <Typography variant="h5" color="error" fontWeight={600}>
-            Something went wrong
-          </Typography>
-          <Typography color="text.secondary" fontSize={14} sx={{ maxWidth: 500, textAlign: 'center' }}>
-            {this.state.error?.message}
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => {
-              localStorage.clear()
-              window.location.href = '/auth/login'
-            }}
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#08080F] p-6">
+          <p className="text-lg font-semibold text-[#FF5C7C]">Something went wrong</p>
+          <p className="text-sm text-[#8A8AA0] max-w-sm text-center">
+            {this.state.error?.message ?? 'An unexpected error occurred'}
+          </p>
+          <button
+            onClick={() => { localStorage.clear(); window.location.href = '/auth/login' }}
+            className="px-6 py-2.5 rounded-xl text-white font-medium text-sm"
+            style={{ background: 'linear-gradient(135deg, #6C63FF, #00D4AA)' }}
           >
             Back to login
-          </Button>
-        </Box>
+          </button>
+        </div>
       )
     }
     return this.props.children

@@ -13,12 +13,29 @@ interface User {
 interface AuthCtx {
   user: User | null
   isLoading: boolean
-  login: (d: { email: string; password: string }) => void
-  register: (d: { email: string; password: string; full_name: string }) => void
+  login: (d: any, opts?: any) => void
+  register: (d: any, opts?: any) => void
+  loginPending: boolean
+  registerPending: boolean
   logout: () => void
 }
 
 const AuthContext = createContext<AuthCtx | null>(null)
+
+function parseUser(raw: string): User | null {
+  try {
+    const p = JSON.parse(raw)
+    if (!p || typeof p !== 'object' || !p.id) return null
+    return {
+      id: String(p.id || ''),
+      email: String(p.email || ''),
+      full_name: String(p.full_name || ''),
+      currency: String(p.currency || 'INR'),
+    }
+  } catch {
+    return null
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -26,12 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const qc = useQueryClient()
 
+  // Clean up any stale null values from old sessions
   useEffect(() => {
     try {
       const raw = localStorage.getItem('user')
       if (raw) {
         const parsed = JSON.parse(raw)
-        if (parsed && parsed.avatar_url === null) {
+        if (parsed && typeof parsed === 'object' && 'avatar_url' in parsed) {
           delete parsed.avatar_url
           localStorage.setItem('user', JSON.stringify(parsed))
         }
@@ -45,15 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem('user')
       if (raw && raw !== 'undefined' && raw !== 'null') {
-        const parsed = JSON.parse(raw)
-        if (parsed && typeof parsed === 'object' && parsed.id) {
-          setUser({
-            id: String(parsed.id),
-            email: String(parsed.email || ''),
-            full_name: String(parsed.full_name || ''),
-            currency: String(parsed.currency || 'INR'),
-          })
-        }
+        const u = parseUser(raw)
+        if (u) setUser(u)
       }
     } catch {
       localStorage.removeItem('user')
@@ -62,30 +73,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const onSuccess = (data: any) => {
-    if (!data?.access_token) return
+  const onAuthSuccess = (data: any) => {
+    if (!data?.access_token || !data?.user) return
     const u = data.user
-    const safeUser: User = {
+    const safe: User = {
       id: String(u.id || ''),
       email: String(u.email || ''),
       full_name: String(u.full_name || ''),
       currency: String(u.currency || 'INR'),
     }
     localStorage.setItem('access_token', String(data.access_token))
-    localStorage.setItem('refresh_token', String(data.refresh_token))
-    localStorage.setItem('user', JSON.stringify(safeUser))
-    setUser(safeUser)
-    setTimeout(() => navigate('/dashboard'), 50)
+    localStorage.setItem('refresh_token', String(data.refresh_token || ''))
+    localStorage.setItem('user', JSON.stringify(safe))
+    setUser(safe)
+    setTimeout(() => navigate('/dashboard'), 100)
   }
 
-  const { mutate: login } = useMutation({
+  const loginMut = useMutation({
     mutationFn: (d: any) => api.post('/auth/login', d).then((r: any) => r.data),
-    onSuccess,
+    onSuccess: onAuthSuccess,
   })
 
-  const { mutate: register } = useMutation({
+  const registerMut = useMutation({
     mutationFn: (d: any) => api.post('/auth/register', d).then((r: any) => r.data),
-    onSuccess,
+    onSuccess: onAuthSuccess,
   })
 
   const logout = () => {
@@ -96,7 +107,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{
+      user, isLoading,
+      login: loginMut.mutate,
+      register: registerMut.mutate,
+      loginPending: loginMut.isPending,
+      registerPending: registerMut.isPending,
+      logout,
+    }}>
       {children}
     </AuthContext.Provider>
   )

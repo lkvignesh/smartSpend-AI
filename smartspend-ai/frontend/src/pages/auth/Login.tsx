@@ -1,62 +1,95 @@
-import { useForm } from 'react-hook-form'
-import { Box, Button, Card, CardContent, Divider, TextField, Typography, Link, Alert } from '@mui/material'
-import { Link as RouterLink } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, loginPending } = useAuth()
   const [error, setError] = useState('')
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm()
+  const { register, handleSubmit, formState: { errors } } = useForm()
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = (data: any) => {
     setError('')
-    try { await (login as any)(data) }
-    catch { setError('Invalid email or password') }
+    login(data, {
+      onError: () => setError('Invalid email or password'),
+    })
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2,
-      background: 'linear-gradient(135deg, #0A0A0F 0%, #13131A 50%, #1A1A2E 100%)' }}>
-      <Card sx={{ width: '100%', maxWidth: 440 }}>
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ mb: 4, textAlign: 'center' }}>
-            <Typography variant="h4" fontWeight={700} sx={{ background: 'linear-gradient(135deg, #6C63FF, #00D4AA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              SmartSpend AI
-            </Typography>
-            <Typography color="text.secondary" sx={{ mt: 1 }}>Your AI financial copilot</Typography>
-          </Box>
+    <div className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(135deg, #0A0A0F 0%, #13131A 50%, #1A1A2E 100%)' }}>
+      <div className="w-full max-w-[440px] rounded-2xl p-8"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
 
-          {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-br from-[#6C63FF] to-[#00D4AA] bg-clip-text text-transparent">
+            SmartSpend AI
+          </h1>
+          <p className="text-[#8A8AA0] mt-2 text-sm">Your AI financial copilot</p>
+        </div>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <TextField fullWidth label="Email" type="email" margin="normal"
+        {error && (
+          <div className="mb-4 px-4 py-3 rounded-xl bg-[#FF5C7C]/10 border border-[#FF5C7C]/20 text-[#FF5C7C] text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[#8A8AA0] mb-1.5">Email</label>
+            <input
+              type="email"
+              autoComplete="email"
+              className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-[#F0F0FF] placeholder-[#8A8AA0] focus:outline-none focus:border-[#6C63FF] transition-colors"
+              placeholder="you@example.com"
               {...register('email', { required: 'Email is required' })}
-              error={!!errors.email} helperText={errors.email?.message as string} />
-            <TextField fullWidth label="Password" type="password" margin="normal"
+            />
+            {errors.email && (
+              <p className="mt-1 text-xs text-[#FF5C7C]">{String(errors.email.message ?? '')}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#8A8AA0] mb-1.5">Password</label>
+            <input
+              type="password"
+              autoComplete="current-password"
+              className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-[#F0F0FF] placeholder-[#8A8AA0] focus:outline-none focus:border-[#6C63FF] transition-colors"
+              placeholder="••••••••"
               {...register('password', { required: 'Password is required' })}
-              error={!!errors.password} helperText={errors.password?.message as string} />
-            <Box sx={{ textAlign: 'right', mt: 1 }}>
-              <Link component={RouterLink} to="/auth/forgot-password" underline="hover" sx={{ fontSize: 14, color: 'primary.main' }}>
-                Forgot password?
-              </Link>
-            </Box>
-            <Button fullWidth variant="contained" size="large" type="submit" disabled={isSubmitting}
-              sx={{ mt: 3, py: 1.5, fontSize: 16 }}>
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
+            />
+            {errors.password && (
+              <p className="mt-1 text-xs text-[#FF5C7C]">{String(errors.password.message ?? '')}</p>
+            )}
+          </div>
 
-          <Divider sx={{ my: 3 }}><Typography variant="caption" color="text.secondary">or</Typography></Divider>
+          <button
+            type="submit"
+            disabled={loginPending}
+            className="w-full py-3.5 rounded-xl font-semibold text-white transition-opacity disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg, #6C63FF, #00D4AA)' }}
+          >
+            {loginPending ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
 
-          <Typography align="center" color="text.secondary" fontSize={14}>
-            No account?{' '}
-            <Link component={RouterLink} to="/auth/register" underline="hover" sx={{ color: 'primary.main', fontWeight: 600 }}>
-              Create one free
-            </Link>
-          </Typography>
-        </CardContent>
-      </Card>
-    </Box>
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/[0.06]" />
+          </div>
+          <div className="relative flex justify-center text-xs text-[#8A8AA0]">
+            <span className="px-2 bg-transparent">or</span>
+          </div>
+        </div>
+
+        <p className="text-center text-sm text-[#8A8AA0]">
+          No account?{' '}
+          <Link to="/auth/register" className="text-[#6C63FF] font-semibold hover:underline">
+            Create one free
+          </Link>
+        </p>
+      </div>
+    </div>
   )
 }

@@ -1,26 +1,21 @@
 import { useState } from 'react'
-import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Typography, Divider, IconButton } from '@mui/material'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import BarChartIcon from '@mui/icons-material/BarChart'
-import TrackChangesIcon from '@mui/icons-material/TrackChanges'
-import SmartToyIcon from '@mui/icons-material/SmartToy'
-import SettingsIcon from '@mui/icons-material/Settings'
-import LogoutIcon from '@mui/icons-material/Logout'
-import MenuIcon from '@mui/icons-material/Menu'
+import {
+  LayoutDashboard, ReceiptText, Target, Bot,
+  Menu, LogOut, Settings, ChevronRight,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import clsx from 'clsx'
 
-const DRAWER_WIDTH = 240
+interface NavItem { label: string; path: string; Icon: LucideIcon }
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', path: '/dashboard', icon: DashboardIcon },
-  { label: 'Expenses', path: '/expenses', icon: ReceiptLongIcon },
-  { label: 'Income', path: '/income', icon: TrendingUpIcon },
-  { label: 'Analytics', path: '/analytics', icon: BarChartIcon },
-  { label: 'Goals', path: '/goals', icon: TrackChangesIcon },
-  { label: 'AI Advisor', path: '/ai', icon: SmartToyIcon },
+// CRITICAL: store component references, NEVER JSX elements (<Icon />)
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
+  { label: 'Expenses',  path: '/expenses',  Icon: ReceiptText },
+  { label: 'Goals',     path: '/goals',     Icon: Target },
+  { label: 'AI Advisor',path: '/ai',        Icon: Bot },
 ]
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -28,98 +23,112 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(false)
-  const w = collapsed ? 68 : DRAWER_WIDTH
+
   const userName = String(user?.full_name ?? 'User')
   const userEmail = String(user?.email ?? '')
-  const userInitial = userName.charAt(0).toUpperCase()
+  const userInitial = userName.charAt(0).toUpperCase() || 'U'
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <Drawer variant="permanent" sx={{ width: w, flexShrink: 0,
-        '& .MuiDrawer-paper': { width: w, overflowX: 'hidden', transition: 'width 0.2s',
-          background: '#0D0D14', borderRight: '1px solid rgba(255,255,255,0.06)' } }}>
-
-        <Box sx={{ p: 2, display: 'flex', alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between', minHeight: 64 }}>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside
+        className={clsx(
+          'flex flex-col shrink-0 transition-all duration-200',
+          'bg-[#0D0D14] border-r border-white/[0.06]',
+          collapsed ? 'w-[68px]' : 'w-60',
+        )}
+      >
+        {/* Logo row */}
+        <div className={clsx(
+          'flex items-center min-h-[64px] px-3',
+          collapsed ? 'justify-center' : 'justify-between',
+        )}>
           {!collapsed && (
-            <Typography fontWeight={700} fontSize={17}
-              sx={{ background: 'linear-gradient(135deg,#6C63FF,#00D4AA)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span className="font-bold text-[17px] bg-gradient-to-br from-[#6C63FF] to-[#00D4AA] bg-clip-text text-transparent">
               SmartSpend
-            </Typography>
+            </span>
           )}
-          <IconButton size="small" onClick={() => setCollapsed(v => !v)}
-            sx={{ color: 'text.secondary' }}>
-            <MenuIcon fontSize="small" />
-          </IconButton>
-        </Box>
+          <button
+            onClick={() => setCollapsed(v => !v)}
+            className="p-1.5 rounded-lg text-[#8A8AA0] hover:text-[#F0F0FF] hover:bg-white/5 transition-colors"
+          >
+            {collapsed ? <ChevronRight size={18} /> : <Menu size={18} />}
+          </button>
+        </div>
 
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+        <div className="border-t border-white/[0.06]" />
 
-        <List sx={{ px: 1, flex: 1, mt: 1 }}>
-          {NAV_ITEMS.map(({ label, path, icon: Icon }) => {
+        {/* Nav items */}
+        <nav className="flex-1 px-2 py-3 space-y-1">
+          {NAV_ITEMS.map(({ label, path, Icon }) => {
             const active = pathname === path
             return (
-              <ListItem key={path} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton onClick={() => navigate(path)}
-                  sx={{ borderRadius: 2, minHeight: 44,
-                    justifyContent: collapsed ? 'center' : 'flex-start',
-                    bgcolor: active ? 'rgba(108,99,255,0.15)' : 'transparent',
-                    '&:hover': { bgcolor: 'rgba(108,99,255,0.08)' } }}>
-                  <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36,
-                    color: active ? '#6C63FF' : 'text.secondary' }}>
-                    <Icon fontSize="small" />
-                  </ListItemIcon>
-                  {!collapsed && (
-                    <ListItemText primary={label}
-                      primaryTypographyProps={{ fontSize: 14,
-                        fontWeight: active ? 600 : 400,
-                        color: active ? '#6C63FF' : 'text.primary' }} />
-                  )}
-                </ListItemButton>
-              </ListItem>
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className={clsx(
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left',
+                  collapsed ? 'justify-center' : '',
+                  active
+                    ? 'bg-[#6C63FF]/15 text-[#6C63FF]'
+                    : 'text-[#8A8AA0] hover:bg-white/[0.05] hover:text-[#F0F0FF]',
+                )}
+              >
+                <Icon size={18} className="shrink-0" />
+                {!collapsed && (
+                  <span className={clsx('text-sm', active ? 'font-semibold' : 'font-normal')}>
+                    {label}
+                  </span>
+                )}
+              </button>
             )
           })}
-        </List>
+        </nav>
 
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+        <div className="border-t border-white/[0.06]" />
 
-        <Box sx={{ p: 1.5 }}>
+        {/* User section */}
+        <div className="p-2 space-y-1">
           {!collapsed && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5,
-              p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)', mb: 1 }}>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: '#6C63FF', fontSize: 13 }}>
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.04] mb-1">
+              <div className="w-8 h-8 rounded-full bg-[#6C63FF] flex items-center justify-center text-white text-xs font-bold shrink-0">
                 {userInitial}
-              </Avatar>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography fontSize={13} fontWeight={600} noWrap>{userName}</Typography>
-                <Typography fontSize={11} color="text.secondary" noWrap>{userEmail}</Typography>
-              </Box>
-            </Box>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold truncate text-[#F0F0FF]">{userName}</p>
+                <p className="text-[11px] text-[#8A8AA0] truncate">{userEmail}</p>
+              </div>
+            </div>
           )}
-          <ListItemButton onClick={() => navigate('/settings')}
-            sx={{ borderRadius: 2, justifyContent: collapsed ? 'center' : 'flex-start', mb: 0.5 }}>
-            <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: 'text.secondary' }}>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            {!collapsed && <ListItemText primary="Settings"
-              primaryTypographyProps={{ fontSize: 14 }} />}
-          </ListItemButton>
-          <ListItemButton onClick={logout}
-            sx={{ borderRadius: 2, justifyContent: collapsed ? 'center' : 'flex-start' }}>
-            <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: '#FF5C7C' }}>
-              <LogoutIcon fontSize="small" />
-            </ListItemIcon>
-            {!collapsed && <ListItemText primary="Sign out"
-              primaryTypographyProps={{ fontSize: 14, color: '#FF5C7C' }} />}
-          </ListItemButton>
-        </Box>
-      </Drawer>
 
-      <Box component="main" sx={{ flex: 1, minWidth: 0,
-        bgcolor: 'background.default', p: 3, overflow: 'auto' }}>
+          <button
+            onClick={() => navigate('/settings')}
+            className={clsx(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[#8A8AA0] hover:bg-white/[0.05] hover:text-[#F0F0FF] transition-colors',
+              collapsed ? 'justify-center' : '',
+            )}
+          >
+            <Settings size={16} className="shrink-0" />
+            {!collapsed && <span className="text-sm">Settings</span>}
+          </button>
+
+          <button
+            onClick={logout}
+            className={clsx(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[#FF5C7C] hover:bg-[#FF5C7C]/10 transition-colors',
+              collapsed ? 'justify-center' : '',
+            )}
+          >
+            <LogOut size={16} className="shrink-0" />
+            {!collapsed && <span className="text-sm">Sign out</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 min-w-0 bg-[#08080F] p-6 overflow-auto">
         {children}
-      </Box>
-    </Box>
+      </main>
+    </div>
   )
 }
