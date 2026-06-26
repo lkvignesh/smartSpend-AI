@@ -1,13 +1,24 @@
 import { Box, Card, CardContent, Grid, Typography, LinearProgress, Chip, Skeleton, Avatar } from '@mui/material'
 import { Doughnut, Line } from 'react-chartjs-2'
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale, Filler } from 'chart.js'
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  BarElement,
+} from 'chart.js'
 import { useDashboard } from '@/hooks/useFinance'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import SavingsIcon from '@mui/icons-material/Savings'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 
-ChartJS.register(ArcElement, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale, Filler)
+ChartJS.register(ArcElement, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale, Filler, BarElement)
 
 function StatCard({ title, value, subtitle, icon, color, trend }: any) {
   return (
@@ -80,7 +91,12 @@ export default function Dashboard() {
     labels: ['Week 1','Week 2','Week 3','Week 4'],
     datasets: [{
       label: 'Spending',
-      data: [data?.total_expenses_month * 0.2, data?.total_expenses_month * 0.25, data?.total_expenses_month * 0.3, data?.total_expenses_month * 0.25],
+      data: [
+        (data?.total_expenses_month || 0) * 0.2,
+        (data?.total_expenses_month || 0) * 0.25,
+        (data?.total_expenses_month || 0) * 0.3,
+        (data?.total_expenses_month || 0) * 0.25,
+      ],
       borderColor: '#6C63FF', backgroundColor: 'rgba(108,99,255,0.1)', fill: true, tension: 0.4, pointRadius: 4,
     }],
   }

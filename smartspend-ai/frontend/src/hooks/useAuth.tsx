@@ -3,8 +3,21 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
 
-interface User { id: string; email: string; full_name: string; avatar_url?: string; currency: string }
-interface AuthCtx { user: User | null; isLoading: boolean; login: (d: any) => void; register: (d: any) => void; logout: () => void }
+interface User {
+  id: string
+  email: string
+  full_name: string
+  avatar_url?: string
+  currency: string
+}
+
+interface AuthCtx {
+  user: User | null
+  isLoading: boolean
+  login: (d: any) => void
+  register: (d: any) => void
+  logout: () => void
+}
 
 const AuthContext = createContext<AuthCtx | null>(null)
 
@@ -15,27 +28,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient()
 
   useEffect(() => {
-    const stored = localStorage.getItem('user')
-    if (stored) setUser(JSON.parse(stored))
-    setIsLoading(false)
+    try {
+      const stored = localStorage.getItem('user')
+      if (stored && stored !== 'undefined') {
+        setUser(JSON.parse(stored))
+      }
+    } catch {
+      localStorage.clear()
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   const onSuccess = (data: any) => {
+    if (!data?.access_token || !data?.user) return
     localStorage.setItem('access_token', data.access_token)
     localStorage.setItem('refresh_token', data.refresh_token)
     localStorage.setItem('user', JSON.stringify(data.user))
     setUser(data.user)
-    navigate('/dashboard')
+    setTimeout(() => navigate('/dashboard'), 100)
   }
 
   const { mutate: login } = useMutation({
-    mutationFn: (d: any) => api.post('/auth/login', d).then(r => r.data),
+    mutationFn: (d: any) => api.post('/auth/login', d).then((r: any) => r.data),
     onSuccess,
+    onError: (err: any) => {
+      throw err
+    }
   })
 
   const { mutate: register } = useMutation({
-    mutationFn: (d: any) => api.post('/auth/register', d).then(r => r.data),
+    mutationFn: (d: any) => api.post('/auth/register', d).then((r: any) => r.data),
     onSuccess,
+    onError: (err: any) => {
+      throw err
+    }
   })
 
   const logout = () => {
@@ -45,7 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate('/auth/login')
   }
 
-  return <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => {

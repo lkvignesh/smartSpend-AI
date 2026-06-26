@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ThemeProvider, CssBaseline } from '@mui/material'
-import { useState } from 'react'
+import { ThemeProvider, CssBaseline, Box, Typography, Button } from '@mui/material'
+import { useState, ReactNode } from 'react'
 import { darkTheme, lightTheme } from '@/theme'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import AppLayout from '@/components/layout/AppLayout'
@@ -14,10 +14,35 @@ import AIAdvisor from '@/pages/ai/AIAdvisor'
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } })
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ErrorFallback() {
+  return (
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', flexDirection: 'column', gap: 2,
+      background: '#0A0A0F' }}>
+      <Typography color="error">Something went wrong</Typography>
+      <Button variant="outlined" onClick={() => {
+        localStorage.clear()
+        window.location.href = '/auth/login'
+      }}>
+        Back to login
+      </Button>
+    </Box>
+  )
+}
+
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth()
-  if (isLoading) return null
-  return user ? <AppLayout>{children}</AppLayout> : <Navigate to="/auth/login" replace />
+
+  if (isLoading) return (
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', background: '#0A0A0F' }}>
+      <Typography color="text.secondary">Loading...</Typography>
+    </Box>
+  )
+
+  if (!user) return <Navigate to="/auth/login" replace />
+
+  return <AppLayout>{children}</AppLayout>
 }
 
 function AppRoutes() {
