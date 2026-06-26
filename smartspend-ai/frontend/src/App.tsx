@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider, CssBaseline, Box, Typography, Button } from '@mui/material'
 import { useState, ReactNode } from 'react'
@@ -63,15 +64,17 @@ function AppRoutes() {
 export default function App() {
   const [dark] = useState(true)
   return (
-    <QueryClientProvider client={qc}>
-      <ThemeProvider theme={dark ? darkTheme : lightTheme}>
-        <CssBaseline />
-        <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={qc}>
+        <ThemeProvider theme={dark ? darkTheme : lightTheme}>
+          <CssBaseline />
+          <BrowserRouter>
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }

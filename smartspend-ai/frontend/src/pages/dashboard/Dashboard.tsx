@@ -229,20 +229,20 @@ export default function Dashboard() {
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography fontWeight={600} sx={{ mb: 2 }}>Recent transactions</Typography>
-              {recentExpenses.length > 0 ? recentExpenses.map((e: any) => (
+              {recentExpenses.length > 0 ? recentExpenses.map((e: any, idx: number) => (
                 <Box
-                  key={e?.id}
+                  key={String(e?.id || idx)}
                   sx={{
                     display: 'flex', justifyContent: 'space-between',
                     alignItems: 'center', py: 1.5,
-                    borderBottom: '1px solid rgba(255,255,255,0.04)'
+                    borderBottom: idx < recentExpenses.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none'
                   }}
                 >
                   <Box>
-                    <Typography fontSize={14} fontWeight={500}>{String(e?.title || '')}</Typography>
+                    <Typography fontSize={14} fontWeight={500}>{String(e?.title || 'Untitled')}</Typography>
                     <Typography fontSize={12} color="text.secondary">
                       {e?.date ? new Date(e.date).toLocaleDateString('en-IN') : ''}
-                      {e?.merchant ? ` · ${e.merchant}` : ''}
+                      {e?.merchant ? ` · ${String(e.merchant)}` : ''}
                     </Typography>
                   </Box>
                   <Typography fontWeight={600} sx={{ color: '#FF5C7C' }}>

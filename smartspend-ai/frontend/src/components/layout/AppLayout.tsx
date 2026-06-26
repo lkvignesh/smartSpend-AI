@@ -75,11 +75,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {!collapsed && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)', mb: 1 }}>
               <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
-                {user?.full_name?.[0]?.toUpperCase()}
+                {String(user?.full_name || '?')[0].toUpperCase()}
               </Avatar>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography fontSize={13} fontWeight={600} noWrap>{user?.full_name}</Typography>
-                <Typography fontSize={11} color="text.secondary" noWrap>{user?.email}</Typography>
+                <Typography fontSize={13} fontWeight={600} noWrap>{String(user?.full_name || '')}</Typography>
+                <Typography fontSize={11} color="text.secondary" noWrap>{String(user?.email || '')}</Typography>
               </Box>
             </Box>
           )}
