@@ -7,15 +7,15 @@ interface User {
   id: string
   email: string
   full_name: string
-  avatar_url?: string
+  avatar_url?: string | null
   currency: string
 }
 
 interface AuthCtx {
   user: User | null
   isLoading: boolean
-  login: (d: any) => void
-  register: (d: any) => void
+  login: (d: { email: string; password: string }) => void
+  register: (d: { email: string; password: string; full_name: string }) => void
   logout: () => void
 }
 
@@ -29,40 +29,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('user')
-      if (stored && stored !== 'undefined') {
-        setUser(JSON.parse(stored))
+      const raw = localStorage.getItem('user')
+      if (raw && raw !== 'undefined' && raw !== 'null') {
+        const parsed = JSON.parse(raw)
+        if (parsed && typeof parsed === 'object' && parsed.id) {
+          setUser({
+            id: String(parsed.id),
+            email: String(parsed.email || ''),
+            full_name: String(parsed.full_name || ''),
+            avatar_url: parsed.avatar_url ? String(parsed.avatar_url) : null,
+            currency: String(parsed.currency || 'INR'),
+          })
+        }
       }
     } catch {
-      localStorage.clear()
+      localStorage.removeItem('user')
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   const onSuccess = (data: any) => {
-    if (!data?.access_token || !data?.user) return
-    localStorage.setItem('access_token', data.access_token)
-    localStorage.setItem('refresh_token', data.refresh_token)
-    localStorage.setItem('user', JSON.stringify(data.user))
-    setUser(data.user)
-    setTimeout(() => navigate('/dashboard'), 100)
+    if (!data?.access_token) return
+    const u = data.user
+    const safeUser: User = {
+      id: String(u.id),
+      email: String(u.email || ''),
+      full_name: String(u.full_name || ''),
+      avatar_url: u.avatar_url ? String(u.avatar_url) : null,
+      currency: String(u.currency || 'INR'),
+    }
+    localStorage.setItem('access_token', String(data.access_token))
+    localStorage.setItem('refresh_token', String(data.refresh_token))
+    localStorage.setItem('user', JSON.stringify(safeUser))
+    setUser(safeUser)
+    setTimeout(() => navigate('/dashboard'), 50)
   }
 
   const { mutate: login } = useMutation({
     mutationFn: (d: any) => api.post('/auth/login', d).then((r: any) => r.data),
     onSuccess,
-    onError: (err: any) => {
-      throw err
-    }
   })
 
   const { mutate: register } = useMutation({
     mutationFn: (d: any) => api.post('/auth/register', d).then((r: any) => r.data),
     onSuccess,
-    onError: (err: any) => {
-      throw err
-    }
   })
 
   const logout = () => {

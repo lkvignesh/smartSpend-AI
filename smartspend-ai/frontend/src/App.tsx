@@ -1,8 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider, CssBaseline, Box, Typography, Button } from '@mui/material'
-import { useState, ReactNode } from 'react'
+import { Component, ReactNode, useState } from 'react'
 import { darkTheme, lightTheme } from '@/theme'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import AppLayout from '@/components/layout/AppLayout'
@@ -13,36 +12,45 @@ import Expenses from '@/pages/expenses/Expenses'
 import Goals from '@/pages/goals/Goals'
 import AIAdvisor from '@/pages/ai/AIAdvisor'
 
-const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } })
+const qc = new QueryClient({
+  defaultOptions: { queries: { retry: 1, staleTime: 30000 } }
+})
 
-function ErrorFallback() {
-  return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', flexDirection: 'column', gap: 2,
-      background: '#0A0A0F' }}>
-      <Typography color="error">Something went wrong</Typography>
-      <Button variant="outlined" onClick={() => {
-        localStorage.clear()
-        window.location.href = '/auth/login'
-      }}>
-        Back to login
-      </Button>
-    </Box>
-  )
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  state = { error: null }
+  static getDerivedStateFromError(e: Error) { return { error: e.message } }
+  componentDidCatch(e: Error, info: any) {
+    console.error('App error:', e.message)
+    console.error('Component stack:', info.componentStack)
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 2, background: '#0A0A0F', p: 3 }}>
+          <Typography color="error" variant="h6" fontWeight={600}>Something went wrong</Typography>
+          <Typography color="text.secondary" fontSize={13} sx={{ maxWidth: 400, textAlign: 'center' }}>
+            {String(this.state.error)}
+          </Typography>
+          <Button variant="contained" onClick={() => { localStorage.clear(); window.location.href = '/auth/login' }}>
+            Back to login
+          </Button>
+        </Box>
+      )
+    }
+    return this.props.children
+  }
 }
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth()
-
   if (isLoading) return (
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
       justifyContent: 'center', background: '#0A0A0F' }}>
       <Typography color="text.secondary">Loading...</Typography>
     </Box>
   )
-
   if (!user) return <Navigate to="/auth/login" replace />
-
   return <AppLayout>{children}</AppLayout>
 }
 
