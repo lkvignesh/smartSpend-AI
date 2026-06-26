@@ -7,7 +7,6 @@ interface User {
   id: string
   email: string
   full_name: string
-  avatar_url?: string | null
   currency: string
 }
 
@@ -30,6 +29,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem('user')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed && parsed.avatar_url === null) {
+          delete parsed.avatar_url
+          localStorage.setItem('user', JSON.stringify(parsed))
+        }
+      }
+    } catch {
+      localStorage.removeItem('user')
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('user')
       if (raw && raw !== 'undefined' && raw !== 'null') {
         const parsed = JSON.parse(raw)
         if (parsed && typeof parsed === 'object' && parsed.id) {
@@ -37,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: String(parsed.id),
             email: String(parsed.email || ''),
             full_name: String(parsed.full_name || ''),
-            avatar_url: parsed.avatar_url ? String(parsed.avatar_url) : null,
             currency: String(parsed.currency || 'INR'),
           })
         }
@@ -53,10 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!data?.access_token) return
     const u = data.user
     const safeUser: User = {
-      id: String(u.id),
+      id: String(u.id || ''),
       email: String(u.email || ''),
       full_name: String(u.full_name || ''),
-      avatar_url: u.avatar_url ? String(u.avatar_url) : null,
       currency: String(u.currency || 'INR'),
     }
     localStorage.setItem('access_token', String(data.access_token))
