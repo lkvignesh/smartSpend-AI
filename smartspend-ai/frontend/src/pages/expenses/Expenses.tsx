@@ -174,7 +174,7 @@ export default function Expenses() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -193,7 +193,7 @@ export default function Expenses() {
       </div>
 
       {/* Filters */}
-      <div className="rounded-2xl p-5 space-y-4"
+      <div className="rounded-2xl p-6 space-y-5"
         style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
 
         {/* Search */}

@@ -115,9 +115,9 @@ export default function AIAdvisor() {
       <div className="hidden lg:flex w-64 shrink-0 flex-col gap-4 overflow-y-auto">
 
         {/* Snapshot */}
-        <div className="rounded-2xl p-4"
+        <div className="rounded-2xl p-5"
           style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text3)' }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--c-text3)' }}>
             Your snapshot
           </p>
           <div className="space-y-1">
@@ -138,8 +138,8 @@ export default function AIAdvisor() {
         </div>
 
         {/* Suggestions */}
-        <div className="rounded-2xl p-4" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-          <div className="flex items-center gap-2 mb-3">
+        <div className="rounded-2xl p-5" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+          <div className="flex items-center gap-2 mb-4">
             <Lightbulb size={13} style={{ color: '#F59E0B' }} />
             <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text3)' }}>
               Try asking
@@ -187,7 +187,7 @@ export default function AIAdvisor() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+        <div className="flex-1 overflow-y-auto px-8 py-8 space-y-6">
           <AnimatePresence initial={false}>
             {history.map((msg, i) => <ChatBubble key={i} msg={msg} />)}
           </AnimatePresence>
