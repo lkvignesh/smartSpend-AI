@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, forwardRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -27,10 +27,10 @@ function StrengthBar({ pw }: { pw: string }) {
   )
 }
 
-function Field({ label, type, error, toggle, showToggle, hint, ...rest }: {
+const Field = forwardRef<HTMLInputElement, {
   label: string; type: string; error?: string; hint?: string
   toggle?: () => void; showToggle?: boolean; [k: string]: any
-}) {
+}>(function Field({ label, type, error, toggle, showToggle, hint, ...rest }, ref) {
   return (
     <div>
       <label className="block text-[13px] font-semibold mb-2" style={{ color: 'var(--c-text2)' }}>
@@ -38,6 +38,7 @@ function Field({ label, type, error, toggle, showToggle, hint, ...rest }: {
       </label>
       <div className="relative">
         <input
+          ref={ref}
           type={type}
           className="form-input w-full px-4 text-[15px] rounded-xl focus:outline-none"
           style={{
@@ -60,7 +61,7 @@ function Field({ label, type, error, toggle, showToggle, hint, ...rest }: {
       {error && <p className="mt-1.5 text-[12px]" style={{ color: '#EF4444' }}>{error}</p>}
     </div>
   )
-}
+})
 
 const STEPS = [
   { label: 'Your info',     step: 1 },
