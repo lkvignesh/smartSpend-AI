@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useExpenses, useCreateExpense, useDeleteExpense } from '@/hooks/useFinance'
 import { Input, Select } from '@/components/ui/Input'
 import { Button }  from '@/components/ui/Button'
-import { Badge }   from '@/components/ui/Badge'
+
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TransactionSkeleton } from '@/components/ui/Skeleton'
 import { Dialog }  from '@/components/ui/Dialog'
@@ -61,7 +61,7 @@ function ExpenseRow({ expense, onDelete, delay }: { expense: any; onDelete: (id:
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--text)' }}>
-          {expense.description || expense.category || 'Expense'}
+          {expense.title || expense.description || expense.category || 'Expense'}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="t-small capitalize" style={{ color: 'var(--text3)' }}>{cat}</span>
@@ -107,6 +107,7 @@ export default function Expenses() {
     if (search.trim()) {
       const q = search.toLowerCase()
       out = out.filter(e =>
+        e.title?.toLowerCase().includes(q) ||
         e.description?.toLowerCase().includes(q) ||
         e.category?.toLowerCase().includes(q)
       )
@@ -116,8 +117,8 @@ export default function Expenses() {
 
   const totalShown = filtered.reduce((s: number, e: any) => s + Number(e.amount), 0)
 
-  const onSubmit = handleSubmit(data => {
-    create({ ...data, amount: Number(data.amount) }, {
+  const onSubmit = handleSubmit(({ description, ...rest }) => {
+    create({ title: description, ...rest, amount: Number(rest.amount) }, {
       onSuccess: () => {
         toast.success('Expense added')
         reset({ date: new Date().toISOString().slice(0, 10) })
