@@ -1,185 +1,328 @@
 import { useState } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Trash2, X, Search } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useExpenses, useCreateExpense, useDeleteExpense } from '@/hooks/useFinance'
+import { TransactionRowSkeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { useToast } from '@/components/ui/Toast'
 
-const CATEGORIES = [
-  { id: '1', name: 'Food',          color: '#FF5C7C' },
-  { id: '2', name: 'Travel',        color: '#FFB547' },
-  { id: '3', name: 'Shopping',      color: '#6C63FF' },
-  { id: '4', name: 'Entertainment', color: '#00D4AA' },
-  { id: '5', name: 'Healthcare',    color: '#4ECDC4' },
-  { id: '6', name: 'Utilities',     color: '#95A5A6' },
-  { id: '7', name: 'Education',     color: '#3498DB' },
-  { id: '8', name: 'Other',         color: '#BDC3C7' },
+const CATS = [
+  { name: 'Food',          color: '#EF4444', emoji: '🍽' },
+  { name: 'Travel',        color: '#F59E0B', emoji: '✈' },
+  { name: 'Shopping',      color: '#7C3AED', emoji: '🛍' },
+  { name: 'Entertainment', color: '#06B6D4', emoji: '🎬' },
+  { name: 'Healthcare',    color: '#10B981', emoji: '💊' },
+  { name: 'Utilities',     color: '#6B7280', emoji: '⚡' },
+  { name: 'Education',     color: '#2563EB', emoji: '📚' },
+  { name: 'Other',         color: '#9CA3AF', emoji: '📦' },
 ]
 
-const PAYMENT_METHODS = ['UPI', 'Cash', 'Credit Card', 'Debit Card', 'Net Banking', 'Wallet']
+const PMETHODS = ['UPI', 'Cash', 'Credit Card', 'Debit Card', 'Net Banking', 'Wallet']
 
-const CARD_STYLE = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }
-const INPUT_CLS = 'w-full px-3.5 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-[#F0F0FF] placeholder-[#8A8AA0] focus:outline-none focus:border-[#6C63FF] transition-colors text-sm'
-const LABEL_CLS = 'block text-xs font-medium text-[#8A8AA0] mb-1.5'
+const INPUT_CLS = `w-full px-4 py-3 text-[13px] rounded-xl transition-colors focus:outline-none`
 
-export default function Expenses() {
-  const { data: expenses, isLoading } = useExpenses()
+function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+        style={{ color: 'var(--c-text3)' }}>{label}</label>
+      {children}
+      {error && <p className="mt-1.5 text-[12px]" style={{ color: '#EF4444' }}>{error}</p>}
+    </div>
+  )
+}
+
+function AddDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const createExpense = useCreateExpense()
-  const deleteExpense = useDeleteExpense()
-  const [open, setOpen] = useState(false)
+  const toast = useToast()
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
-  const list = Array.isArray(expenses) ? expenses : []
-
   const onSubmit = (data: any) => {
-    createExpense.mutate({
-      ...data,
-      amount: parseFloat(data.amount),
-      date: new Date(data.date).toISOString(),
-    }, {
-      onSuccess: () => { setOpen(false); reset() },
+    createExpense.mutate(
+      { ...data, amount: parseFloat(data.amount), date: new Date(data.date).toISOString() },
+      {
+        onSuccess: () => {
+          toast.success('Expense added', 'Your expense has been recorded.')
+          onClose(); reset()
+        },
+        onError: () => toast.error('Failed to add expense'),
+      }
+    )
+  }
+
+  const inputStyle = {
+    background: 'var(--c-s2)',
+    border: '1px solid var(--c-border)',
+    color: 'var(--c-text)',
+  }
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            className="fixed inset-0 z-40"
+            style={{ background: 'rgba(0,0,0,0.45)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+          <motion.div
+            className="fixed right-0 top-0 h-full z-50 flex flex-col"
+            style={{ width: 'min(440px, 100vw)', background: 'var(--c-surface)', borderLeft: '1px solid var(--c-border)', boxShadow: 'var(--c-shadowlg)' }}
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: 'spring', stiffness: 280, damping: 32 }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 shrink-0"
+              style={{ borderBottom: '1px solid var(--c-border)' }}>
+              <div>
+                <h2 className="font-semibold text-[15px]" style={{ color: 'var(--c-text)' }}>Add expense</h2>
+                <p className="text-[12px] mt-0.5" style={{ color: 'var(--c-text3)' }}>Record a new transaction</p>
+              </div>
+              <button onClick={onClose} aria-label="Close"
+                className="w-8 h-8 flex items-center justify-center rounded-xl transition-colors hover:bg-[rgba(239,68,68,0.08)]"
+                style={{ color: 'var(--c-text3)' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+              <FormField label="Title" error={errors.title ? 'Required' : undefined}>
+                <input className={INPUT_CLS} style={inputStyle} placeholder="e.g. Lunch at cafe"
+                  onFocus={e => e.target.style.borderColor = '#2563EB'}
+                  onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                  {...register('title', { required: true })} />
+              </FormField>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Amount (₹)" error={errors.amount ? 'Required' : undefined}>
+                  <input type="number" step="0.01" className={INPUT_CLS} style={inputStyle} placeholder="0.00"
+                    onFocus={e => e.target.style.borderColor = '#2563EB'}
+                    onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                    {...register('amount', { required: true, min: 0 })} />
+                </FormField>
+                <FormField label="Date">
+                  <input type="date" className={INPUT_CLS} style={inputStyle}
+                    defaultValue={new Date().toISOString().split('T')[0]}
+                    onFocus={e => e.target.style.borderColor = '#2563EB'}
+                    onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                    {...register('date', { required: true })} />
+                </FormField>
+              </div>
+
+              <FormField label="Payment method">
+                <select className={INPUT_CLS} style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = '#2563EB'}
+                  onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                  {...register('payment_method')}>
+                  {PMETHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </FormField>
+
+              <FormField label="Merchant (optional)">
+                <input className={INPUT_CLS} style={inputStyle} placeholder="e.g. Swiggy"
+                  onFocus={e => e.target.style.borderColor = '#2563EB'}
+                  onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                  {...register('merchant')} />
+              </FormField>
+
+              <FormField label="Notes (optional)">
+                <textarea rows={3} className={INPUT_CLS} style={{ ...inputStyle, resize: 'none' }}
+                  placeholder="Any additional details…"
+                  onFocus={e => e.target.style.borderColor = '#2563EB'}
+                  onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                  {...register('notes')} />
+              </FormField>
+            </form>
+
+            {/* Footer CTA */}
+            <div className="px-6 py-4 shrink-0" style={{ borderTop: '1px solid var(--c-border)' }}>
+              <div className="flex gap-3">
+                <button type="button" onClick={onClose}
+                  className="flex-none px-5 py-3 rounded-xl text-[13px] font-semibold transition-colors"
+                  style={{ border: '1px solid var(--c-border)', color: 'var(--c-text2)', background: 'transparent' }}>
+                  Cancel
+                </button>
+                <button onClick={handleSubmit(onSubmit)} disabled={createExpense.isPending}
+                  className="flex-1 py-3 rounded-xl text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+                  {createExpense.isPending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      Saving…
+                    </span>
+                  ) : 'Save expense'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
+export default function Expenses() {
+  const { data: rawExpenses, isLoading } = useExpenses()
+  const deleteExpense = useDeleteExpense()
+  const toast = useToast()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [catFilter, setCatFilter] = useState<string | null>(null)
+
+  const list = Array.isArray(rawExpenses) ? rawExpenses : []
+
+  const filtered = list.filter((e: any) => {
+    const matchesSearch = !search ||
+      String(e?.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      String(e?.merchant || '').toLowerCase().includes(search.toLowerCase())
+    const matchesCat = !catFilter || (e?.category?.name === catFilter)
+    return matchesSearch && matchesCat
+  })
+
+  const handleDelete = (id: any) => {
+    deleteExpense.mutate(id, {
+      onSuccess: () => toast.success('Expense deleted'),
+      onError: () => toast.error('Failed to delete'),
     })
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#F0F0FF]">Expenses</h1>
-          <p className="text-[#8A8AA0] text-sm mt-1">Track every rupee you spend</p>
+          <h1 className="text-[26px] font-bold" style={{ color: 'var(--c-text)' }}>Expenses</h1>
+          <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
+            {list.length} transactions this month
+          </p>
         </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm"
-          style={{ background: 'linear-gradient(135deg, #6C63FF, #00D4AA)' }}
-        >
-          <Plus size={16} />
+        <button onClick={() => setDrawerOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
+          style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+          <Plus size={15} />
           Add expense
         </button>
       </div>
 
-      <div className="rounded-2xl overflow-hidden" style={CARD_STYLE}>
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-14 rounded-xl bg-white/[0.04] animate-pulse" />)}
-          </div>
-        ) : list.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-[#8A8AA0] mb-4">No expenses yet. Add your first one!</p>
-            <button onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#6C63FF]/40 text-[#6C63FF] text-sm hover:bg-[#6C63FF]/10 transition-colors">
-              <Plus size={15} /> Add expense
+      {/* Filters */}
+      <div className="rounded-2xl p-4 space-y-3"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+        {/* Search */}
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl"
+          style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
+          <Search size={14} style={{ color: 'var(--c-text3)' }} />
+          <input
+            className="flex-1 text-[13px] bg-transparent focus:outline-none"
+            style={{ color: 'var(--c-text)' }}
+            placeholder="Search transactions…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ color: 'var(--c-text3)' }}>
+              <X size={13} />
             </button>
+          )}
+        </div>
+        {/* Category chips */}
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setCatFilter(null)}
+            className="px-3 py-1 rounded-full text-[12px] font-medium transition-colors"
+            style={{
+              background: !catFilter ? 'linear-gradient(135deg, #2563EB, #7C3AED)' : 'var(--c-s2)',
+              color: !catFilter ? 'white' : 'var(--c-text2)',
+              border: catFilter ? '1px solid var(--c-border)' : 'none',
+            }}>
+            All
+          </button>
+          {CATS.map(c => (
+            <button key={c.name}
+              onClick={() => setCatFilter(catFilter === c.name ? null : c.name)}
+              className="px-3 py-1 rounded-full text-[12px] font-medium transition-colors"
+              style={{
+                background: catFilter === c.name ? c.color : 'var(--c-s2)',
+                color: catFilter === c.name ? 'white' : 'var(--c-text2)',
+                border: catFilter !== c.name ? '1px solid var(--c-border)' : 'none',
+              }}>
+              {c.emoji} {c.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Expense list */}
+      <div className="rounded-2xl overflow-hidden"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+        {isLoading ? (
+          <div className="divide-y" style={{ borderColor: 'var(--c-border2)' }}>
+            {[1,2,3,4,5].map(i => <TransactionRowSkeleton key={i} />)}
           </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            title={search || catFilter ? 'No matching expenses' : 'No expenses yet'}
+            description={search || catFilter ? 'Try adjusting your filters.' : 'Add your first expense to start tracking.'}
+            action={!search && !catFilter ? { label: 'Add expense', onClick: () => setDrawerOpen(true) } : undefined}
+          />
         ) : (
-          <div className="divide-y divide-white/[0.04]">
-            {list.map((e: any, idx: number) => {
-              const cat = CATEGORIES.find(c => c.name === (e?.category?.name ?? ''))
-              const color = cat?.color || '#6C63FF'
-              return (
-                <div key={String(e?.id ?? idx)}
-                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                    style={{ background: color + '22' }}>
-                    💸
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#F0F0FF]">{String(e?.title || '')}</p>
-                    <p className="text-xs text-[#8A8AA0] mt-0.5">
-                      {e?.date ? new Date(e.date).toLocaleDateString('en-IN') : ''}
-                      {e?.merchant ? ' · ' + String(e.merchant) : ''}
-                      {e?.payment_method ? ' · ' + String(e.payment_method) : ''}
-                    </p>
-                  </div>
-                  {e?.category?.name ? (
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0"
-                      style={{ background: color + '22', color }}>
-                      {String(e.category.name)}
-                    </span>
-                  ) : null}
-                  <span className="font-bold text-[#FF5C7C] shrink-0 min-w-[80px] text-right">
-                    ₹{(Number(e?.amount) || 0).toLocaleString('en-IN')}
-                  </span>
-                  <button
-                    onClick={() => deleteExpense.mutate(e.id)}
-                    className="p-1.5 rounded-lg text-[#8A8AA0] hover:text-[#FF5C7C] hover:bg-[#FF5C7C]/10 transition-colors shrink-0"
+          <div className="divide-y" style={{ borderColor: 'var(--c-border2)' }}>
+            <AnimatePresence initial={false}>
+              {filtered.map((e: any, idx: number) => {
+                const cat = CATS.find(c => c.name === (e?.category?.name ?? ''))
+                return (
+                  <motion.div
+                    key={String(e?.id ?? idx)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-3.5 px-5 py-3.5 group"
+                    style={{ background: 'transparent' }}
+                    onMouseEnter={e2 => ((e2.currentTarget as HTMLElement).style.background = 'var(--c-s2)')}
+                    onMouseLeave={e2 => ((e2.currentTarget as HTMLElement).style.background = 'transparent')}
                   >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              )
-            })}
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
+                      style={{ background: cat ? `${cat.color}18` : 'var(--c-s2)' }}>
+                      {cat?.emoji ?? '📦'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium truncate" style={{ color: 'var(--c-text)' }}>
+                        {String(e?.title || '')}
+                      </p>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
+                        {e?.date ? new Date(e.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : ''}
+                        {e?.merchant ? ` · ${String(e.merchant)}` : ''}
+                        {e?.payment_method ? ` · ${String(e.payment_method)}` : ''}
+                      </p>
+                    </div>
+                    {e?.category?.name && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 hidden sm:inline"
+                        style={{ background: cat ? `${cat.color}18` : 'var(--c-s2)', color: cat?.color ?? 'var(--c-text2)' }}>
+                        {String(e.category.name)}
+                      </span>
+                    )}
+                    <span className="text-[13px] font-bold num shrink-0" style={{ color: '#EF4444' }}>
+                      ₹{(Number(e?.amount) || 0).toLocaleString('en-IN')}
+                    </span>
+                    <button
+                      onClick={() => handleDelete(e.id)}
+                      aria-label="Delete expense"
+                      className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                      style={{ color: '#EF4444', background: 'rgba(239,68,68,0.08)' }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>
 
-      {/* Modal */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.6)' }}
-          onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}>
-          <div className="w-full max-w-md rounded-2xl p-6" style={CARD_STYLE}>
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-semibold text-[#F0F0FF]">Add expense</h2>
-              <button onClick={() => setOpen(false)} className="text-[#8A8AA0] hover:text-[#F0F0FF]">
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-              <div>
-                <label className={LABEL_CLS}>Title</label>
-                <input className={INPUT_CLS} placeholder="e.g. Lunch at Cafe"
-                  {...register('title', { required: true })} />
-                {errors.title ? <p className="mt-1 text-xs text-[#FF5C7C]">Required</p> : null}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={LABEL_CLS}>Amount (₹)</label>
-                  <input type="number" step="0.01" className={INPUT_CLS} placeholder="0.00"
-                    {...register('amount', { required: true, min: 0 })} />
-                </div>
-                <div>
-                  <label className={LABEL_CLS}>Date</label>
-                  <input type="date" className={INPUT_CLS}
-                    defaultValue={new Date().toISOString().split('T')[0]}
-                    {...register('date', { required: true })} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={LABEL_CLS}>Payment method</label>
-                  <select className={INPUT_CLS} defaultValue="UPI" {...register('payment_method')}>
-                    {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className={LABEL_CLS}>Merchant</label>
-                  <input className={INPUT_CLS} placeholder="Optional" {...register('merchant')} />
-                </div>
-              </div>
-
-              <div>
-                <label className={LABEL_CLS}>Notes</label>
-                <textarea rows={2} className={INPUT_CLS} placeholder="Optional"
-                  {...register('notes')} />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-[#8A8AA0] border border-white/[0.1] text-sm hover:bg-white/[0.04] transition-colors">
-                  Cancel
-                </button>
-                <button type="submit" disabled={createExpense.isPending}
-                  className="flex-1 py-2.5 rounded-xl text-white font-medium text-sm disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg, #6C63FF, #00D4AA)' }}>
-                  {createExpense.isPending ? 'Saving…' : 'Save expense'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   )
 }

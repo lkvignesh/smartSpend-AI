@@ -1,22 +1,126 @@
 @import "tailwindcss";
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
 
-html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+/* ── Design tokens ─────────────────────────────── */
+:root {
+  --c-bg:        #F0F4FF;
+  --c-surface:   #FFFFFF;
+  --c-s2:        #F6F8FE;
+  --c-s3:        #EDF0FA;
+  --c-border:    rgba(37, 99, 235, 0.10);
+  --c-border2:   rgba(37, 99, 235, 0.06);
+  --c-text:      #0D1117;
+  --c-text2:     #5A6478;
+  --c-text3:     #96A0B0;
+  --c-shadow:    0 1px 3px rgba(17,24,39,0.07), 0 4px 16px rgba(37,99,235,0.07);
+  --c-shadowlg:  0 2px 8px rgba(17,24,39,0.10), 0 16px 40px rgba(37,99,235,0.10);
+}
+
+.dark {
+  --c-bg:        #080812;
+  --c-surface:   #0F1019;
+  --c-s2:        #161724;
+  --c-s3:        #1D1F31;
+  --c-border:    rgba(255, 255, 255, 0.07);
+  --c-border2:   rgba(255, 255, 255, 0.04);
+  --c-text:      #E4E8F1;
+  --c-text2:     #8892A0;
+  --c-text3:     #525C6A;
+  --c-shadow:    0 1px 3px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.35);
+  --c-shadowlg:  0 2px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.45);
+}
+
+:root, .dark {
+  --c-primary: #2563EB;
+  --c-primary-d: #1D4ED8;
+  --c-purple:  #7C3AED;
+  --c-cyan:    #06B6D4;
+  --c-success: #10B981;
+  --c-warning: #F59E0B;
+  --c-danger:  #EF4444;
+}
+
+/* ── Reset ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: #08080F;
-  color: #F0F0FF;
-  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--c-bg);
+  color: var(--c-text);
+  line-height: 1.5;
+  letter-spacing: -0.011em;
+  transition: background 0.22s ease, color 0.22s ease;
 }
 
 #root { min-height: 100vh; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+/* ── Typography helpers ─────────────────────────── */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
 
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.grad-text {
+  background: linear-gradient(135deg, #2563EB, #7C3AED);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Scrollbar ──────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--c-text3); }
+
+/* ── Animations ─────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: 200% center; }
+  to   { background-position: -200% center; }
+}
+
+@keyframes gradient-flow {
+  0%,100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0px); }
+  50%      { transform: translateY(-10px); }
+}
+
+@keyframes spin-once {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--c-surface) 25%,
+    var(--c-s2) 50%,
+    var(--c-surface) 75%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Utility ────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection { background: rgba(37, 99, 235, 0.15); }
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+input[type=number] { -moz-appearance: textfield; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

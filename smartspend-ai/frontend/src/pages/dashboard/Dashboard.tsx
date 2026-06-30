@@ -1,57 +1,172 @@
-import { ElementType } from 'react'
+import { useEffect, useRef, ElementType } from 'react'
+import { motion } from 'framer-motion'
 import {
-  Chart as ChartJS, ArcElement, Tooltip, Legend,
+  Chart as ChartJS,
+  ArcElement, Tooltip, Legend,
   LineElement, PointElement, LinearScale, CategoryScale, Filler, BarElement,
 } from 'chart.js'
 import { Doughnut, Line } from 'react-chartjs-2'
-import { TrendingUp, TrendingDown, PiggyBank, Heart } from 'lucide-react'
+import { TrendingUp, TrendingDown, PiggyBank, HeartPulse, Sparkles, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { useDashboard } from '@/hooks/useFinance'
+import { StatCardSkeleton, TransactionRowSkeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 ChartJS.register(ArcElement, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale, Filler, BarElement)
 
-const CHART_COLORS = ['#6C63FF', '#00D4AA', '#FFB547', '#FF5C7C', '#4ECDC4']
-const CARD = 'rounded-2xl p-6' as const
-const CARD_STYLE = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }
+const CHART_COLORS = ['#2563EB', '#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#EF4444']
+const CAT_ICONS: Record<string, string> = {
+  Food: '🍽', Travel: '✈', Shopping: '🛍', Entertainment: '🎬',
+  Healthcare: '💊', Utilities: '⚡', Education: '📚', Other: '📦',
+}
 
-function StatCard({ title, value, subtitle, color, IconComp }: {
-  title: string; value: string; subtitle?: string; color: string; IconComp: ElementType
+function container(stagger = 0.07) {
+  return {
+    hidden: {},
+    show: { transition: { staggerChildren: stagger } },
+  }
+}
+const EASE = [0.25, 0.1, 0.25, 1] as [number, number, number, number]
+const item = {
+  hidden: { opacity: 0, y: 18 },
+  show:  { opacity: 1, y: 0, transition: { duration: 0.32, ease: EASE } },
+}
+
+function useCounter(target: number) {
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!ref.current) return
+    const start = Date.now()
+    const dur = 1100
+    const tick = () => {
+      const progress = Math.min((Date.now() - start) / dur, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      if (ref.current) ref.current.textContent = Math.round(target * eased).toLocaleString('en-IN')
+      if (progress < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [target])
+  return ref
+}
+
+function StatCard({ title, value, subtitle, trend, IconComp, gradient, trendUp }: {
+  title: string; value: number; subtitle?: string; trend?: number
+  IconComp: ElementType; gradient: string; trendUp?: boolean
 }) {
+  const numRef = useCounter(value)
   return (
-    <div className={CARD} style={CARD_STYLE}>
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-[13px] text-[#8A8AA0] font-medium">{title}</p>
-          <p className="text-3xl font-bold mt-1" style={{ color }}>{value}</p>
-          {subtitle ? <p className="text-xs text-[#8A8AA0] mt-1">{subtitle}</p> : null}
+    <motion.div
+      variants={item}
+      whileHover={{ y: -3 }}
+      className="rounded-2xl p-5 cursor-default"
+      style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', boxShadow: 'var(--c-shadow)' }}
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: gradient }}>
+          <IconComp size={18} className="text-white" />
         </div>
-        <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: color + '22' }}>
-          <IconComp size={20} color={color} />
-        </div>
+        {trend !== undefined && (
+          <span className={`flex items-center gap-0.5 text-[12px] font-semibold ${trendUp ? 'text-emerald-500' : 'text-red-500'}`}>
+            {trendUp ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+            {Math.abs(trend)}%
+          </span>
+        )}
       </div>
-    </div>
+      <p className="text-[12px] font-medium mb-1" style={{ color: 'var(--c-text2)' }}>{title}</p>
+      <p className="text-[26px] font-bold num leading-none" style={{ color: 'var(--c-text)' }}>
+        ₹<span ref={numRef}>0</span>
+      </p>
+      {subtitle && <p className="text-[11px] mt-1.5" style={{ color: 'var(--c-text3)' }}>{subtitle}</p>}
+    </motion.div>
   )
 }
 
 function HealthCard({ score, label }: { score: number; label: string }) {
-  const color = score >= 80 ? '#00C896' : score >= 60 ? '#6C63FF' : score >= 40 ? '#FFB547' : '#FF5C7C'
+  const color = score >= 80 ? '#10B981' : score >= 60 ? '#2563EB' : score >= 40 ? '#F59E0B' : '#EF4444'
   return (
-    <div className={CARD} style={CARD_STYLE}>
-      <div className="flex items-center gap-2 mb-3">
-        <Heart size={16} color={color} />
-        <p className="text-[13px] text-[#8A8AA0] font-medium">Financial health</p>
+    <motion.div
+      variants={item}
+      whileHover={{ y: -3 }}
+      className="rounded-2xl p-5"
+      style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', boxShadow: 'var(--c-shadow)' }}
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: `${color}22` }}>
+          <HeartPulse size={18} style={{ color }} />
+        </div>
+        <span className="text-[12px] font-bold num" style={{ color }}>{score}/100</span>
       </div>
-      <div className="flex items-baseline gap-1 mb-2">
-        <span className="text-4xl font-bold" style={{ color }}>{score}</span>
-        <span className="text-[#8A8AA0] text-sm">/100</span>
+      <p className="text-[12px] font-medium mb-1" style={{ color: 'var(--c-text2)' }}>Financial health</p>
+      <div className="h-1.5 rounded-full mt-3" style={{ background: 'var(--c-border)' }}>
+        <motion.div
+          className="h-full rounded-full"
+          style={{ background: color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1] as [number,number,number,number] }}
+        />
       </div>
-      <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: color + '22', color }}>
+      <span className="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+        style={{ background: `${color}18`, color }}>
         {label}
       </span>
-      <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-        <div className="h-full rounded-full transition-all" style={{ width: `${score}%`, background: color }} />
-      </div>
-    </div>
+    </motion.div>
   )
+}
+
+function AITip({ tip }: { tip: string }) {
+  return (
+    <motion.div variants={item}
+      className="relative rounded-2xl p-px overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED, #06B6D4)' }}>
+      <div className="rounded-[calc(1rem-1px)] px-4 py-3.5 flex items-center gap-3"
+        style={{ background: 'var(--c-surface)' }}>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+          <Sparkles size={15} className="text-white" />
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-0.5"
+            style={{ color: '#2563EB' }}>AI Insight</p>
+          <p className="text-[13px] leading-snug" style={{ color: 'var(--c-text)' }}>{tip}</p>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function TransactionRow({ e, last }: { e: any; last: boolean }) {
+  const catName = String(e?.category?.name || 'Other')
+  const icon = CAT_ICONS[catName] ?? '📦'
+  return (
+    <motion.div
+      whileHover={{ backgroundColor: 'rgba(37,99,235,0.03)' }}
+      className="flex items-center gap-3.5 px-5 py-3.5 transition-colors"
+      style={{ borderBottom: last ? 'none' : '1px solid var(--c-border2)' }}>
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
+        style={{ background: 'var(--c-s2)' }}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-medium truncate" style={{ color: 'var(--c-text)' }}>
+          {String(e?.title || '')}
+        </p>
+        <p className="text-[11px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
+          {catName}
+          {e?.date ? ` · ${new Date(e.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}` : ''}
+        </p>
+      </div>
+      <span className="text-[13px] font-semibold num shrink-0" style={{ color: '#EF4444' }}>
+        −₹{(Number(e?.amount) || 0).toLocaleString('en-IN')}
+      </span>
+    </motion.div>
+  )
+}
+
+function greeting() {
+  const h = new Date().getHours()
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
 }
 
 export default function Dashboard() {
@@ -59,26 +174,60 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div>
-        <div className="h-8 w-48 rounded-xl bg-white/[0.06] mb-6 animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="h-32 rounded-2xl bg-white/[0.04] animate-pulse" />
-          ))}
+      <div className="space-y-6">
+        <div className="h-8 w-56 shimmer rounded-xl" />
+        <div className="h-12 w-full shimmer rounded-2xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => <StatCardSkeleton key={i} />)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 h-72 shimmer rounded-2xl" />
+          <div className="h-72 shimmer rounded-2xl" />
         </div>
       </div>
     )
   }
 
-  const expenses   = Number(data?.total_expenses_month) || 0
-  const income     = Number(data?.total_income_month)   || 0
-  const savings    = Number(data?.savings_month)        || 0
-  const savingsRate = Number(data?.savings_rate)        || 0
-  const healthScore = Number(data?.health_score)        || 0
-  const healthLabel = String(data?.health_label        || 'N/A')
-  const cats   = Array.isArray(data?.top_categories)   ? data.top_categories  : []
-  const recent = Array.isArray(data?.recent_expenses)  ? data.recent_expenses : []
-  const fmt = (n: number) => '₹' + n.toLocaleString('en-IN')
+  const expenses    = Number(data?.total_expenses_month) || 0
+  const income      = Number(data?.total_income_month)   || 0
+  const savings     = Number(data?.savings_month)        || 0
+  const savingsRate = Number(data?.savings_rate)         || 0
+  const health      = Number(data?.health_score)         || 0
+  const healthLabel = String(data?.health_label         || 'Good')
+  const cats        = Array.isArray(data?.top_categories)  ? data.top_categories  : []
+  const recent      = Array.isArray(data?.recent_expenses) ? data.recent_expenses : []
+
+  const aiTip = savings > 0
+    ? `You've saved ₹${savings.toLocaleString('en-IN')} this month — a ${savingsRate}% savings rate. Keep it up!`
+    : 'Start tracking expenses to get personalised AI recommendations.'
+
+  const chartTextColor = 'var(--c-text2)'
+  const gridColor = 'var(--c-border)'
+
+  const lineData = {
+    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+    datasets: [
+      {
+        label: 'Spending',
+        data: [expenses * 0.22, expenses * 0.28, expenses * 0.27, expenses * 0.23].map(n => Number(n.toFixed(0))),
+        borderColor: '#2563EB',
+        backgroundColor: 'rgba(37,99,235,0.08)',
+        fill: true, tension: 0.4, pointRadius: 4,
+        pointBackgroundColor: '#2563EB',
+        pointBorderColor: 'var(--c-surface)',
+        pointBorderWidth: 2,
+      },
+    ],
+  }
+
+  const lineOptions = {
+    responsive: true,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx: any) => ` ₹${ctx.raw.toLocaleString('en-IN')}` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: chartTextColor, font: { size: 12 } } },
+      y: { grid: { color: gridColor, drawBorder: false }, ticks: { color: chartTextColor, font: { size: 12 }, callback: (v: any) => `₹${(v/1000).toFixed(0)}k` } },
+    },
+  }
 
   const doughnutData = {
     labels: cats.map((c: any) => String(c?.name || '')),
@@ -86,92 +235,92 @@ export default function Dashboard() {
       data: cats.map((c: any) => Number(c?.amount) || 0),
       backgroundColor: CHART_COLORS,
       borderWidth: 0,
+      hoverOffset: 6,
     }],
   }
 
-  const lineData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-    datasets: [{
-      label: 'Spending',
-      data: [expenses * 0.2, expenses * 0.25, expenses * 0.3, expenses * 0.25].map(n => Number(n) || 0),
-      borderColor: '#6C63FF',
-      backgroundColor: 'rgba(108,99,255,0.1)',
-      fill: true,
-      tension: 0.4,
-      pointRadius: 4,
-    }],
+  const doughnutOptions = {
+    cutout: '72%',
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: { color: chartTextColor, padding: 12, font: { size: 11 }, boxWidth: 10, boxHeight: 10, borderRadius: 3, useBorderRadius: true },
+      },
+    },
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#F0F0FF]">Dashboard</h1>
-        <p className="text-[#8A8AA0] text-sm mt-1">
-          {new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+    <motion.div variants={container()} initial="hidden" animate="show" className="space-y-5">
+
+      {/* Page header */}
+      <motion.div variants={item}>
+        <h1 className="text-[26px] font-bold" style={{ color: 'var(--c-text)' }}>
+          {greeting()} 👋
+        </h1>
+        <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
+          {new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
-        <StatCard title="Monthly expenses" value={fmt(expenses)} subtitle="This month" color="#FF5C7C" IconComp={TrendingDown} />
-        <StatCard title="Monthly income"   value={fmt(income)}   subtitle="This month" color="#00D4AA" IconComp={TrendingUp} />
-        <StatCard title="Savings"          value={fmt(savings)}  subtitle={savingsRate + '% savings rate'} color="#6C63FF" IconComp={PiggyBank} />
-        <HealthCard score={healthScore} label={healthLabel} />
-      </div>
+      {/* AI tip */}
+      <AITip tip={aiTip} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-        {/* Line chart */}
-        <div className="lg:col-span-2 rounded-2xl p-6" style={CARD_STYLE}>
-          <p className="font-semibold text-[#F0F0FF] mb-4">Spending trend</p>
-          <Line data={lineData} options={{
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false }, ticks: { color: '#8A8AA0' } },
-              y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8A8AA0' } },
-            },
-          }} />
-        </div>
+      {/* Stats grid */}
+      <motion.div variants={container(0.05)} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Monthly spend" value={expenses} subtitle="This month" trend={-8} trendUp={false}
+          gradient="linear-gradient(135deg, #EF4444, #DC2626)" IconComp={TrendingDown} />
+        <StatCard title="Income" value={income} subtitle="This month" trend={5} trendUp={true}
+          gradient="linear-gradient(135deg, #10B981, #059669)" IconComp={TrendingUp} />
+        <StatCard title="Savings" value={savings} subtitle={`${savingsRate}% rate`} trend={savingsRate > 20 ? 8 : undefined} trendUp={true}
+          gradient="linear-gradient(135deg, #2563EB, #7C3AED)" IconComp={PiggyBank} />
+        <HealthCard score={health} label={healthLabel} />
+      </motion.div>
 
-        {/* Doughnut chart */}
-        <div className="rounded-2xl p-6" style={CARD_STYLE}>
-          <p className="font-semibold text-[#F0F0FF] mb-4">Top categories</p>
-          {cats.length > 0 ? (
-            <Doughnut data={doughnutData} options={{
-              plugins: { legend: { position: 'bottom' as const, labels: { color: '#8A8AA0', padding: 12, font: { size: 12 } } } },
-              cutout: '70%',
-            }} />
-          ) : (
-            <div className="flex items-center justify-center py-10">
-              <p className="text-[#8A8AA0] text-sm">No expenses this month</p>
+      {/* Charts */}
+      <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 rounded-2xl p-6"
+          style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', boxShadow: 'var(--c-shadow)' }}>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="font-semibold text-[14px]" style={{ color: 'var(--c-text)' }}>Spending trend</p>
+              <p className="text-[12px] mt-0.5" style={{ color: 'var(--c-text3)' }}>This month</p>
             </div>
-          )}
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg"
+              style={{ background: 'rgba(37,99,235,0.08)', color: '#2563EB' }}>
+              Monthly
+            </span>
+          </div>
+          <Line data={lineData} options={lineOptions as any} />
         </div>
-      </div>
+
+        <div className="rounded-2xl p-6"
+          style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', boxShadow: 'var(--c-shadow)' }}>
+          <p className="font-semibold text-[14px] mb-1" style={{ color: 'var(--c-text)' }}>Categories</p>
+          <p className="text-[12px] mb-5" style={{ color: 'var(--c-text3)' }}>Spend breakdown</p>
+          {cats.length > 0
+            ? <Doughnut data={doughnutData} options={doughnutOptions} />
+            : <EmptyState compact title="No data yet" description="Expenses will appear here once you start tracking." />
+          }
+        </div>
+      </motion.div>
 
       {/* Recent transactions */}
-      <div className="rounded-2xl p-6" style={CARD_STYLE}>
-        <p className="font-semibold text-[#F0F0FF] mb-4">Recent transactions</p>
-        {recent.length > 0 ? (
-          <div className="space-y-0 divide-y divide-white/[0.04]">
-            {recent.map((e: any, i: number) => (
-              <div key={String(e?.id ?? i)} className="flex justify-between items-center py-3">
-                <div>
-                  <p className="text-sm font-medium text-[#F0F0FF]">{String(e?.title || '')}</p>
-                  <p className="text-xs text-[#8A8AA0] mt-0.5">
-                    {e?.date ? new Date(e.date).toLocaleDateString('en-IN') : ''}
-                    {e?.merchant ? ' · ' + String(e.merchant) : ''}
-                  </p>
-                </div>
-                <span className="font-bold text-[#FF5C7C]">
-                  -{fmt(Number(e?.amount) || 0)}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[#8A8AA0] text-sm">No recent transactions. Add your first expense!</p>
-        )}
-      </div>
-    </div>
+      <motion.div variants={item} className="rounded-2xl overflow-hidden"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', boxShadow: 'var(--c-shadow)' }}>
+        <div className="flex items-center justify-between px-5 py-4"
+          style={{ borderBottom: '1px solid var(--c-border)' }}>
+          <p className="font-semibold text-[14px]" style={{ color: 'var(--c-text)' }}>Recent transactions</p>
+          <span className="text-[12px] font-medium num" style={{ color: 'var(--c-text3)' }}>
+            {recent.length} this month
+          </span>
+        </div>
+        {recent.length > 0
+          ? recent.slice(0, 8).map((e: any, i: number) => (
+              <TransactionRow key={String(e?.id ?? i)} e={e} last={i === Math.min(recent.length, 8) - 1} />
+            ))
+          : <EmptyState compact title="No transactions yet" description="Your recent expenses will show up here." />
+        }
+      </motion.div>
+    </motion.div>
   )
 }

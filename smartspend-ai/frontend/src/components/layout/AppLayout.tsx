@@ -1,134 +1,263 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/context/ThemeContext'
 import {
-  LayoutDashboard, ReceiptText, Target, Bot,
-  Menu, LogOut, Settings, ChevronRight,
+  LayoutDashboard, ReceiptText, Wallet, Target, BarChart3,
+  Sparkles, Settings, LogOut, ChevronLeft, ChevronRight,
+  Sun, Moon, Bell, Search, Plus, PanelLeftClose, PanelLeft,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import clsx from 'clsx'
 
-interface NavItem { label: string; path: string; Icon: LucideIcon }
+interface NavItem {
+  label: string
+  path: string
+  Icon: LucideIcon
+  soon?: boolean
+}
 
-// CRITICAL: store component references, NEVER JSX elements (<Icon />)
-const NAV_ITEMS: NavItem[] = [
+const MAIN_NAV: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
   { label: 'Expenses',  path: '/expenses',  Icon: ReceiptText },
+  { label: 'Income',    path: '/income',    Icon: Wallet,    soon: true },
   { label: 'Goals',     path: '/goals',     Icon: Target },
-  { label: 'AI Advisor',path: '/ai',        Icon: Bot },
+  { label: 'Analytics', path: '/analytics', Icon: BarChart3, soon: true },
+  { label: 'AI Advisor',path: '/ai',        Icon: Sparkles },
 ]
+
+function greeting() {
+  const h = new Date().getHours()
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+}
+
+function formatDate() {
+  return new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth()
+  const { isDark, toggle: toggleTheme } = useTheme()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
-  const userName = String(user?.full_name ?? 'User')
-  const userEmail = String(user?.email ?? '')
-  const userInitial = userName.charAt(0).toUpperCase() || 'U'
+  const userName   = String(user?.full_name ?? 'User')
+  const userEmail  = String(user?.email ?? '')
+  const initial    = userName.charAt(0).toUpperCase() || 'U'
+
+  const handleNav = (path: string, soon?: boolean) => {
+    if (soon) return
+    navigate(path)
+    setMobileNavOpen(false)
+  }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside
-        className={clsx(
-          'flex flex-col shrink-0 transition-all duration-200',
-          'bg-[#0D0D14] border-r border-white/[0.06]',
-          collapsed ? 'w-[68px]' : 'w-60',
-        )}
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--c-bg)' }}>
+
+      {/* ── Desktop sidebar ─────────────────────── */}
+      <motion.aside
+        animate={{ width: collapsed ? 64 : 220 }}
+        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+        className="relative hidden md:flex flex-col h-full shrink-0 overflow-hidden"
+        style={{ background: 'var(--c-surface)', borderRight: '1px solid var(--c-border)' }}
       >
-        {/* Logo row */}
-        <div className={clsx(
-          'flex items-center min-h-[64px] px-3',
-          collapsed ? 'justify-center' : 'justify-between',
-        )}>
-          {!collapsed && (
-            <span className="font-bold text-[17px] bg-gradient-to-br from-[#6C63FF] to-[#00D4AA] bg-clip-text text-transparent">
-              SmartSpend
-            </span>
-          )}
-          <button
-            onClick={() => setCollapsed(v => !v)}
-            className="p-1.5 rounded-lg text-[#8A8AA0] hover:text-[#F0F0FF] hover:bg-white/5 transition-colors"
-          >
-            {collapsed ? <ChevronRight size={18} /> : <Menu size={18} />}
-          </button>
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-4 h-14 shrink-0"
+          style={{ borderBottom: '1px solid var(--c-border)' }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+            <Sparkles size={14} className="text-white" />
+          </div>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.15 }}
+                className="font-bold text-[15px] whitespace-nowrap"
+                style={{ color: 'var(--c-text)' }}
+              >
+                FinancePilot
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="border-t border-white/[0.06]" />
-
-        {/* Nav items */}
-        <nav className="flex-1 px-2 py-3 space-y-1">
-          {NAV_ITEMS.map(({ label, path, Icon }) => {
+        {/* Nav */}
+        <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
+          {!collapsed && (
+            <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--c-text3)' }}>
+              Main
+            </p>
+          )}
+          {MAIN_NAV.map(({ label, path, Icon, soon }) => {
             const active = pathname === path
             return (
-              <button
-                key={path}
-                onClick={() => navigate(path)}
-                className={clsx(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left',
-                  collapsed ? 'justify-center' : '',
-                  active
-                    ? 'bg-[#6C63FF]/15 text-[#6C63FF]'
-                    : 'text-[#8A8AA0] hover:bg-white/[0.05] hover:text-[#F0F0FF]',
+              <div key={path} className="relative">
+                {/* Active left-border indicator */}
+                {active && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full"
+                    style={{ background: 'linear-gradient(180deg, #2563EB, #7C3AED)' }}
+                    initial={false}
+                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                  />
                 )}
-              >
-                <Icon size={18} className="shrink-0" />
-                {!collapsed && (
-                  <span className={clsx('text-sm', active ? 'font-semibold' : 'font-normal')}>
-                    {label}
-                  </span>
-                )}
-              </button>
+                <button
+                  onClick={() => handleNav(path, soon)}
+                  title={soon ? `${label} — coming soon` : label}
+                  className={`w-full flex items-center gap-2.5 rounded-xl transition-colors text-left
+                    ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
+                    ${soon ? 'opacity-50 cursor-default' : 'cursor-pointer'}
+                    ${active ? '' : 'hover:bg-[rgba(37,99,235,0.07)]'}`}
+                  style={{
+                    background: active ? 'rgba(37,99,235,0.10)' : 'transparent',
+                    color: active ? '#2563EB' : 'var(--c-text2)',
+                  }}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <Icon size={17} className="shrink-0" />
+                  {!collapsed && (
+                    <span className={`text-[13px] flex-1 ${active ? 'font-semibold' : 'font-medium'}`}>
+                      {label}
+                    </span>
+                  )}
+                  {!collapsed && soon && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
+                      Soon
+                    </span>
+                  )}
+                </button>
+              </div>
             )
           })}
         </nav>
 
-        <div className="border-t border-white/[0.06]" />
-
-        {/* User section */}
-        <div className="p-2 space-y-1">
+        {/* Bottom section */}
+        <div className="px-2 py-2 shrink-0" style={{ borderTop: '1px solid var(--c-border)' }}>
           {!collapsed && (
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.04] mb-1">
-              <div className="w-8 h-8 rounded-full bg-[#6C63FF] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {userInitial}
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl mb-1"
+              style={{ background: 'var(--c-s2)' }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+                {initial}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold truncate text-[#F0F0FF]">{userName}</p>
-                <p className="text-[11px] text-[#8A8AA0] truncate">{userEmail}</p>
+                <p className="text-[12px] font-semibold truncate" style={{ color: 'var(--c-text)' }}>{userName}</p>
+                <p className="text-[11px] truncate" style={{ color: 'var(--c-text3)' }}>{userEmail}</p>
               </div>
             </div>
           )}
-
           <button
             onClick={() => navigate('/settings')}
-            className={clsx(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[#8A8AA0] hover:bg-white/[0.05] hover:text-[#F0F0FF] transition-colors',
-              collapsed ? 'justify-center' : '',
-            )}
-          >
-            <Settings size={16} className="shrink-0" />
-            {!collapsed && <span className="text-sm">Settings</span>}
+            className={`w-full flex items-center gap-2.5 rounded-xl py-2 transition-colors hover:bg-[rgba(37,99,235,0.07)]
+              ${collapsed ? 'justify-center px-0' : 'px-3'}`}
+            style={{ color: 'var(--c-text2)' }}>
+            <Settings size={16} />
+            {!collapsed && <span className="text-[13px] font-medium">Settings</span>}
           </button>
-
           <button
             onClick={logout}
-            className={clsx(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[#FF5C7C] hover:bg-[#FF5C7C]/10 transition-colors',
-              collapsed ? 'justify-center' : '',
-            )}
-          >
-            <LogOut size={16} className="shrink-0" />
-            {!collapsed && <span className="text-sm">Sign out</span>}
+            className={`w-full flex items-center gap-2.5 rounded-xl py-2 transition-colors hover:bg-red-500/10
+              ${collapsed ? 'justify-center px-0' : 'px-3'}`}
+            style={{ color: '#EF4444' }}>
+            <LogOut size={16} />
+            {!collapsed && <span className="text-[13px] font-medium">Sign out</span>}
           </button>
         </div>
-      </aside>
 
-      {/* Main content */}
-      <main className="flex-1 min-w-0 bg-[#08080F] p-6 overflow-auto">
-        {children}
-      </main>
+        {/* Collapse toggle */}
+        <button
+          onClick={() => setCollapsed(v => !v)}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="absolute top-3.5 -right-3 w-6 h-6 rounded-full flex items-center justify-center
+            transition-colors z-10 hover:scale-110"
+          style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text3)', boxShadow: 'var(--c-shadow)' }}>
+          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+        </button>
+      </motion.aside>
+
+      {/* ── Mobile bottom nav ───────────────────── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex"
+        style={{ background: 'var(--c-surface)', borderTop: '1px solid var(--c-border)' }}>
+        {MAIN_NAV.filter(n => !n.soon).map(({ label, path, Icon }) => {
+          const active = pathname === path
+          return (
+            <button key={path} onClick={() => handleNav(path)}
+              className="flex-1 flex flex-col items-center py-3 gap-1 transition-colors"
+              style={{ color: active ? '#2563EB' : 'var(--c-text3)' }}
+              aria-current={active ? 'page' : undefined}>
+              <Icon size={20} />
+              <span className="text-[10px] font-medium">{label.split(' ')[0]}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Main area ───────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Topbar */}
+        <header className="flex items-center gap-4 px-6 h-14 shrink-0 sticky top-0 z-20"
+          style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
+
+          {/* Greeting */}
+          <div className="hidden lg:block flex-1 min-w-0">
+            <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--c-text)' }}>
+              {greeting()}, <span className="grad-text">{userName.split(' ')[0]}</span>
+            </p>
+            <p className="text-[11px]" style={{ color: 'var(--c-text3)' }}>{formatDate()}</p>
+          </div>
+
+          {/* Search */}
+          <div className="flex-1 lg:flex-none flex items-center gap-2 px-3 py-2 rounded-xl max-w-xs"
+            style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
+            <Search size={14} style={{ color: 'var(--c-text3)' }} />
+            <span className="text-[13px]" style={{ color: 'var(--c-text3)' }}>Search…</span>
+          </div>
+
+          {/* Quick add */}
+          <button
+            onClick={() => navigate('/expenses')}
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+            <Plus size={14} />
+            <span>Add</span>
+          </button>
+
+          {/* Notifications */}
+          <button aria-label="Notifications"
+            className="relative w-8 h-8 flex items-center justify-center rounded-xl transition-colors hover:bg-[rgba(37,99,235,0.07)]"
+            style={{ color: 'var(--c-text2)' }}>
+            <Bell size={16} />
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
+          </button>
+
+          {/* Theme toggle */}
+          <button onClick={toggleTheme} aria-label="Toggle theme"
+            className="w-8 h-8 flex items-center justify-center rounded-xl transition-colors hover:bg-[rgba(37,99,235,0.07)]"
+            style={{ color: 'var(--c-text2)' }}>
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
+          {/* Avatar */}
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+            style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+            {initial}
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-7 pb-20 md:pb-7">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
