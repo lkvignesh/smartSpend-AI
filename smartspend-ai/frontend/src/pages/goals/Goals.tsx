@@ -64,7 +64,7 @@ function GoalCard({ goal, colorIdx }: { goal: any; colorIdx: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: EASE }}
       whileHover={{ y: -4 }}
-      className="rounded-2xl p-6 flex flex-col gap-5"
+      className="rounded-2xl p-5 flex flex-col gap-4"
       style={{
         background: 'var(--c-surface)',
         border: done ? `1px solid ${c.ring}40` : '1px solid var(--c-border)',
@@ -255,20 +255,20 @@ export default function Goals() {
   const noGoalsPlaceholder = goals.length === 0 && !isLoading
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[40px] font-bold tracking-tight leading-none" style={{ color: 'var(--c-text)' }}>
+          <h1 className="text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--c-text)' }}>
             Goals
           </h1>
-          <p className="text-[15px] mt-2" style={{ color: 'var(--c-text3)' }}>
+          <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
             {active.length} active · {done.length} achieved
           </p>
         </div>
         <button onClick={() => setDrawerOpen(true)} className="btn-primary shrink-0">
-          <Plus size={18} />
+          <Plus size={16} />
           New goal
         </button>
       </div>
@@ -287,10 +287,10 @@ export default function Goals() {
         <>
           {active.length > 0 && (
             <div>
-              <p className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--c-text3)' }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text3)' }}>
                 In progress
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {active.map((g: any, i: number) => (
                   <GoalCard key={String(g?.id ?? i)} goal={g} colorIdx={i} />
                 ))}
@@ -299,10 +299,10 @@ export default function Goals() {
           )}
           {done.length > 0 && (
             <div>
-              <p className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--c-text3)' }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text3)' }}>
                 Achieved
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {done.map((g: any, i: number) => (
                   <GoalCard key={String(g?.id ?? i)} goal={g} colorIdx={i + active.length} />
                 ))}

@@ -174,20 +174,20 @@ export default function Expenses() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[40px] font-bold tracking-tight leading-none" style={{ color: 'var(--c-text)' }}>
+          <h1 className="text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--c-text)' }}>
             Expenses
           </h1>
-          <p className="text-[15px] mt-2" style={{ color: 'var(--c-text3)' }}>
+          <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
             {list.length} transactions this month
           </p>
         </div>
         <button onClick={() => setDrawerOpen(true)} className="btn-primary shrink-0">
-          <Plus size={18} />
+          <Plus size={16} />
           Add expense
         </button>
       </div>

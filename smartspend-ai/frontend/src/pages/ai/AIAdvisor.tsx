@@ -112,42 +112,43 @@ export default function AIAdvisor() {
     <div className="flex gap-6 h-[calc(100vh-8rem)]">
 
       {/* ── Left panel ──────────────────────────────── */}
-      <div className="hidden lg:flex w-72 shrink-0 flex-col gap-5 overflow-y-auto">
+      <div className="hidden lg:flex w-64 shrink-0 flex-col gap-4 overflow-y-auto">
 
         {/* Snapshot */}
-        <div className="rounded-2xl p-5 space-y-3"
+        <div className="rounded-2xl p-4"
           style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text3)' }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text3)' }}>
             Your snapshot
           </p>
-          {INSIGHT_CARDS.map(({ icon: Icon, label, value, desc, color, bg }) => (
-            <div key={label} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: bg }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}15` }}>
-                <Icon size={16} style={{ color }} />
+          <div className="space-y-1">
+            {INSIGHT_CARDS.map(({ icon: Icon, label, value, desc, color }) => (
+              <div key={label} className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                style={{ background: 'var(--c-s2)' }}>
+                <Icon size={15} style={{ color }} className="shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px]" style={{ color: 'var(--c-text3)' }}>{label}</p>
+                  <p className="text-[13px] font-bold num leading-tight" style={{ color }}>
+                    {value}{' '}
+                    <span className="text-[11px] font-normal" style={{ color: 'var(--c-text3)' }}>{desc}</span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-[12px]" style={{ color: 'var(--c-text3)' }}>{label}</p>
-                <p className="text-[15px] font-bold num leading-tight" style={{ color }}>
-                  {value}{' '}
-                  <span className="text-[12px] font-normal" style={{ color: 'var(--c-text3)' }}>{desc}</span>
-                </p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Suggestions */}
-        <div className="rounded-2xl p-5" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Lightbulb size={14} style={{ color: '#F59E0B' }} />
+        <div className="rounded-2xl p-4" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb size={13} style={{ color: '#F59E0B' }} />
             <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text3)' }}>
               Try asking
             </p>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {SUGGESTIONS.map(s => (
               <button key={s} onClick={() => sendMessage(s)}
-                className="w-full text-left px-3.5 py-2.5 rounded-xl text-[13px] leading-snug transition-all"
+                className="w-full text-left px-3 py-2 rounded-xl text-[12px] leading-snug transition-all"
                 style={{ border: '1px solid var(--c-border)', color: 'var(--c-text2)', background: 'transparent' }}
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLElement
