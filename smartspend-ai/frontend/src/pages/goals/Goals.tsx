@@ -17,20 +17,20 @@ const GOAL_COLORS = [
   { from: '#06B6D4', to: '#2563EB', ring: '#06B6D4' },
 ]
 
-const INPUT_CLS = 'w-full px-4 py-3 text-[13px] rounded-xl transition-colors focus:outline-none'
+const INPUT_CLS = 'w-full px-4 text-[15px] rounded-xl transition-colors focus:outline-none'
 
 function CircularProgress({ pct, size = 96, color }: { pct: number; size?: number; color: string }) {
-  const radius = (size - 10) / 2
-  const circ   = 2 * Math.PI * radius
+  const radius  = (size - 10) / 2
+  const circ    = 2 * Math.PI * radius
   const clamped = Math.min(100, Math.max(0, pct))
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={radius} fill="none" strokeWidth={5}
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" strokeWidth={6}
           stroke="var(--c-border)" />
         <motion.circle
-          cx={size/2} cy={size/2} r={radius} fill="none" strokeWidth={5}
+          cx={size/2} cy={size/2} r={radius} fill="none" strokeWidth={6}
           stroke={color}
           strokeLinecap="round"
           strokeDasharray={circ}
@@ -39,7 +39,7 @@ function CircularProgress({ pct, size = 96, color }: { pct: number; size?: numbe
           transition={{ duration: 1.2, ease: EASE }}
         />
       </svg>
-      <span className="absolute text-[14px] font-bold num" style={{ color }}>
+      <span className="absolute text-[13px] font-bold num" style={{ color }}>
         {Math.round(clamped)}%
       </span>
     </div>
@@ -47,11 +47,11 @@ function CircularProgress({ pct, size = 96, color }: { pct: number; size?: numbe
 }
 
 function GoalCard({ goal, colorIdx }: { goal: any; colorIdx: number }) {
-  const c = GOAL_COLORS[colorIdx % GOAL_COLORS.length]
-  const current  = Number(goal?.current_amount)  || 0
-  const target   = Number(goal?.target_amount)   || 1
-  const pct      = Math.min(100, (current / target) * 100)
-  const done     = pct >= 100
+  const c       = GOAL_COLORS[colorIdx % GOAL_COLORS.length]
+  const current = Number(goal?.current_amount)  || 0
+  const target  = Number(goal?.target_amount)   || 1
+  const pct     = Math.min(100, (current / target) * 100)
+  const done    = pct >= 100
   const deadline = goal?.deadline ? new Date(goal.deadline) : null
   const daysLeft = deadline ? Math.ceil((deadline.getTime() - Date.now()) / 86400000) : null
   const monthly  = (daysLeft && daysLeft > 0)
@@ -63,8 +63,8 @@ function GoalCard({ goal, colorIdx }: { goal: any; colorIdx: number }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: EASE }}
-      whileHover={{ y: -3 }}
-      className="rounded-2xl p-5 flex flex-col gap-4"
+      whileHover={{ y: -4 }}
+      className="rounded-2xl p-6 flex flex-col gap-5"
       style={{
         background: 'var(--c-surface)',
         border: done ? `1px solid ${c.ring}40` : '1px solid var(--c-border)',
@@ -74,35 +74,40 @@ function GoalCard({ goal, colorIdx }: { goal: any; colorIdx: number }) {
       {/* Top row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[14px] truncate" style={{ color: 'var(--c-text)' }}>
+          <p className="font-semibold text-[15px] truncate" style={{ color: 'var(--c-text)' }}>
             {String(goal?.name || 'Goal')}
           </p>
           {done && (
-            <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: `${c.ring}18`, color: c.ring }}>
-              <Sparkles size={10} /> Achieved!
+            <span className="inline-flex items-center gap-1 mt-2 text-[12px] font-semibold px-2.5 py-1 rounded-full"
+              style={{ background: `${c.ring}15`, color: c.ring }}>
+              <Sparkles size={11} /> Achieved!
             </span>
           )}
           {!done && daysLeft !== null && daysLeft >= 0 && (
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
+            <p className="text-[13px] mt-1" style={{ color: 'var(--c-text3)' }}>
               {daysLeft === 0 ? 'Due today' : `${daysLeft} days left`}
             </p>
           )}
+          {!done && daysLeft !== null && daysLeft < 0 && (
+            <p className="text-[13px] mt-1" style={{ color: '#EF4444' }}>
+              Overdue by {Math.abs(daysLeft)} days
+            </p>
+          )}
         </div>
-        <CircularProgress pct={pct} size={80} color={c.ring} />
+        <CircularProgress pct={pct} size={88} color={c.ring} />
       </div>
 
       {/* Amount progress */}
       <div>
-        <div className="flex items-baseline justify-between mb-2">
-          <span className="text-[22px] font-bold num" style={{ color: 'var(--c-text)' }}>
+        <div className="flex items-baseline justify-between mb-3">
+          <span className="text-[24px] font-bold num" style={{ color: 'var(--c-text)' }}>
             ₹{current.toLocaleString('en-IN')}
           </span>
-          <span className="text-[12px] num" style={{ color: 'var(--c-text3)' }}>
+          <span className="text-[13px] num" style={{ color: 'var(--c-text3)' }}>
             of ₹{target.toLocaleString('en-IN')}
           </span>
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--c-border)' }}>
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--c-border)' }}>
           <motion.div
             className="h-full rounded-full"
             style={{ background: `linear-gradient(90deg, ${c.from}, ${c.to})` }}
@@ -115,7 +120,7 @@ function GoalCard({ goal, colorIdx }: { goal: any; colorIdx: number }) {
 
       {/* Monthly needed */}
       {monthly !== null && monthly > 0 && !done && (
-        <p className="text-[12px]" style={{ color: 'var(--c-text3)' }}>
+        <p className="text-[13px]" style={{ color: 'var(--c-text3)' }}>
           Save{' '}
           <span className="font-semibold num" style={{ color: c.ring }}>
             ₹{Math.ceil(monthly).toLocaleString('en-IN')}/mo
@@ -151,59 +156,65 @@ function AddGoalDrawer({ open, onClose }: { open: boolean; onClose: () => void }
           <motion.div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.45)' }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose} />
+
           <motion.div
             className="fixed right-0 top-0 h-full z-50 flex flex-col"
-            style={{ width: 'min(420px, 100vw)', background: 'var(--c-surface)', borderLeft: '1px solid var(--c-border)', boxShadow: 'var(--c-shadowlg)' }}
+            style={{ width: 'min(440px, 100vw)', background: 'var(--c-surface)', borderLeft: '1px solid var(--c-border)', boxShadow: 'var(--c-shadowlg)' }}
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 280, damping: 32 }}>
 
-            <div className="flex items-center justify-between px-6 py-4 shrink-0"
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 shrink-0"
               style={{ borderBottom: '1px solid var(--c-border)' }}>
               <div>
-                <h2 className="font-semibold text-[15px]" style={{ color: 'var(--c-text)' }}>New goal</h2>
-                <p className="text-[12px] mt-0.5" style={{ color: 'var(--c-text3)' }}>Set a target to work towards</p>
+                <h2 className="font-bold text-[18px] tracking-tight" style={{ color: 'var(--c-text)' }}>New goal</h2>
+                <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>Set a target to work towards</p>
               </div>
               <button onClick={onClose} aria-label="Close"
-                className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-[rgba(239,68,68,0.08)]"
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[rgba(239,68,68,0.08)]"
                 style={{ color: 'var(--c-text3)' }}>
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
               <div>
-                <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                <label className="block text-[12px] font-semibold uppercase tracking-wide mb-2"
                   style={{ color: 'var(--c-text3)' }}>Goal name</label>
-                <input className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="e.g. Emergency fund"
+                <input className={`${INPUT_CLS} form-input`} style={inputStyle}
+                  placeholder="e.g. Emergency fund"
                   {...register('name', { required: true })} />
-                {errors.name && <p className="mt-1 text-[12px] text-red-500">Required</p>}
+                {errors.name && <p className="mt-1.5 text-[12px] text-red-500">Required</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                  <label className="block text-[12px] font-semibold uppercase tracking-wide mb-2"
                     style={{ color: 'var(--c-text3)' }}>Target (₹)</label>
-                  <input type="number" step="1" className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="50000"
+                  <input type="number" step="1" className={`${INPUT_CLS} form-input`} style={inputStyle}
+                    placeholder="50000"
                     {...register('target_amount', { required: true, min: 1 })} />
-                  {errors.target_amount && <p className="mt-1 text-[12px] text-red-500">Required</p>}
+                  {errors.target_amount && <p className="mt-1.5 text-[12px] text-red-500">Required</p>}
                 </div>
                 <div>
-                  <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                  <label className="block text-[12px] font-semibold uppercase tracking-wide mb-2"
                     style={{ color: 'var(--c-text3)' }}>Saved so far (₹)</label>
-                  <input type="number" step="1" className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="0"
+                  <input type="number" step="1" className={`${INPUT_CLS} form-input`} style={inputStyle}
+                    placeholder="0"
                     {...register('current_amount')} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                <label className="block text-[12px] font-semibold uppercase tracking-wide mb-2"
                   style={{ color: 'var(--c-text3)' }}>Deadline (optional)</label>
                 <input type="date" className={`${INPUT_CLS} form-input`} style={inputStyle}
                   {...register('deadline')} />
               </div>
 
               <div>
-                <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                <label className="block text-[12px] font-semibold uppercase tracking-wide mb-2"
                   style={{ color: 'var(--c-text3)' }}>Description (optional)</label>
                 <textarea rows={3} className={`${INPUT_CLS} form-input`} style={{ ...inputStyle, resize: 'none' }}
                   placeholder="Why is this goal important to you?"
@@ -211,15 +222,13 @@ function AddGoalDrawer({ open, onClose }: { open: boolean; onClose: () => void }
               </div>
             </form>
 
-            <div className="px-6 py-4 shrink-0 flex gap-3" style={{ borderTop: '1px solid var(--c-border)' }}>
-              <button type="button" onClick={onClose}
-                className="px-5 py-3 rounded-xl text-[13px] font-semibold"
-                style={{ border: '1px solid var(--c-border)', color: 'var(--c-text2)', background: 'transparent' }}>
+            {/* Footer */}
+            <div className="px-6 py-5 shrink-0 flex gap-3" style={{ borderTop: '1px solid var(--c-border)' }}>
+              <button type="button" onClick={onClose} className="btn-ghost">
                 Cancel
               </button>
               <button onClick={handleSubmit(onSubmit)} disabled={createGoal.isPending}
-                className="flex-1 py-3 rounded-xl text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+                className="btn-primary flex-1">
                 {createGoal.isPending ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -239,33 +248,36 @@ export default function Goals() {
   const { data: rawGoals, isLoading } = useGoals()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const goals = Array.isArray(rawGoals) ? rawGoals : []
-  const done  = goals.filter((g: any) => (Number(g?.current_amount) || 0) >= (Number(g?.target_amount) || 1))
+  const goals  = Array.isArray(rawGoals) ? rawGoals : []
+  const done   = goals.filter((g: any) => (Number(g?.current_amount) || 0) >= (Number(g?.target_amount) || 1))
   const active = goals.filter((g: any) => (Number(g?.current_amount) || 0) < (Number(g?.target_amount) || 1))
 
+  const noGoalsPlaceholder = goals.length === 0 && !isLoading
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
+
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-bold" style={{ color: 'var(--c-text)' }}>Goals</h1>
-          <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
+          <h1 className="text-[40px] font-bold tracking-tight leading-none" style={{ color: 'var(--c-text)' }}>
+            Goals
+          </h1>
+          <p className="text-[15px] mt-2" style={{ color: 'var(--c-text3)' }}>
             {active.length} active · {done.length} achieved
           </p>
         </div>
-        <button onClick={() => setDrawerOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white hover:opacity-90 active:scale-[0.98]"
-          style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-          <Plus size={15} />
+        <button onClick={() => setDrawerOpen(true)} className="btn-primary shrink-0">
+          <Plus size={18} />
           New goal
         </button>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1,2,3].map(i => <GoalCardSkeleton key={i} />)}
         </div>
-      ) : goals.length === 0 ? (
+      ) : noGoalsPlaceholder ? (
         <EmptyState
           title="No goals yet"
           description="Set a savings goal and track your progress toward it."
@@ -275,10 +287,10 @@ export default function Goals() {
         <>
           {active.length > 0 && (
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text3)' }}>
+              <p className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--c-text3)' }}>
                 In progress
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {active.map((g: any, i: number) => (
                   <GoalCard key={String(g?.id ?? i)} goal={g} colorIdx={i} />
                 ))}
@@ -287,10 +299,10 @@ export default function Goals() {
           )}
           {done.length > 0 && (
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text3)' }}>
+              <p className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--c-text3)' }}>
                 Achieved
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {done.map((g: any, i: number) => (
                   <GoalCard key={String(g?.id ?? i)} goal={g} colorIdx={i + active.length} />
                 ))}

@@ -15,16 +15,16 @@ const SUGGESTIONS = [
 ]
 
 const INSIGHT_CARDS = [
-  { icon: TrendingUp,    label: 'Spending trend', value: '+12%', desc: 'vs last month',  color: '#EF4444', bg: 'rgba(239,68,68,0.08)'   },
-  { icon: PiggyBank,     label: 'Savings rate',   value: '28%',  desc: 'on track',       color: '#10B981', bg: 'rgba(16,185,129,0.08)'  },
-  { icon: AlertTriangle, label: 'Alerts',          value: '2',    desc: 'review needed',  color: '#F59E0B', bg: 'rgba(245,158,11,0.08)'  },
+  { icon: TrendingUp,    label: 'Spending trend', value: '+12%', desc: 'vs last month', color: '#EF4444', bg: 'rgba(239,68,68,0.08)'   },
+  { icon: PiggyBank,     label: 'Savings rate',   value: '28%',  desc: 'on track',      color: '#10B981', bg: 'rgba(16,185,129,0.08)'  },
+  { icon: AlertTriangle, label: 'Alerts',          value: '2',    desc: 'review needed', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)'  },
 ]
 
 function TypingDots() {
   return (
-    <div className="flex items-center gap-1.5 px-4 py-3">
+    <div className="flex items-center gap-1.5 px-5 py-4">
       {[0, 1, 2].map(i => (
-        <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
+        <motion.div key={i} className="w-2 h-2 rounded-full"
           style={{ background: '#2563EB' }}
           animate={{ y: [0, -5, 0] }}
           transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.15, ease: 'easeInOut' }} />
@@ -43,13 +43,15 @@ function ChatBubble({ msg }: { msg: Message }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: EASE_CUSTOM }}
       className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+
       {!isUser && (
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
           style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-          <Sparkles size={14} className="text-white" />
+          <Sparkles size={15} className="text-white" />
         </div>
       )}
-      <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+
+      <div className={`max-w-[78%] px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
         style={{
           background: isUser ? 'linear-gradient(135deg, #2563EB, #7C3AED)' : 'var(--c-s2)',
           color: isUser ? 'white' : 'var(--c-text)',
@@ -65,10 +67,10 @@ export default function AIAdvisor() {
   const aiChat = useAIChat()
   const [input, setInput]     = useState('')
   const [history, setHistory] = useState<Message[]>([
-    { role: 'assistant', content: 'Hi! I\'m your AI financial advisor. Ask me anything about budgeting, saving, or investing — or pick a suggestion on the left.' },
+    { role: 'assistant', content: "Hi! I'm your AI financial advisor. Ask me anything about budgeting, saving, or investing — or pick a suggestion on the left." },
   ])
   const [isTyping, setIsTyping] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const bottomRef   = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -80,6 +82,7 @@ export default function AIAdvisor() {
     const userMsg: Message = { role: 'user', content: text.trim() }
     setHistory(prev => [...prev, userMsg])
     setInput('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
     setIsTyping(true)
 
     aiChat.mutate(
@@ -93,7 +96,7 @@ export default function AIAdvisor() {
         onError: () => {
           setHistory(prev => [
             ...prev,
-            { role: 'assistant', content: 'Sorry, I couldn\'t connect right now. Please try again.' },
+            { role: 'assistant', content: "Sorry, I couldn't connect right now. Please try again." },
           ])
           setIsTyping(false)
         },
@@ -106,23 +109,27 @@ export default function AIAdvisor() {
   }
 
   return (
-    <div className="flex gap-5 h-[calc(100vh-7rem)]">
+    <div className="flex gap-6 h-[calc(100vh-8rem)]">
 
-      {/* Left panel */}
-      <div className="hidden lg:flex w-64 shrink-0 flex-col gap-4 overflow-y-auto">
+      {/* ── Left panel ──────────────────────────────── */}
+      <div className="hidden lg:flex w-72 shrink-0 flex-col gap-5 overflow-y-auto">
+
         {/* Snapshot */}
-        <div className="rounded-2xl p-4 space-y-2"
+        <div className="rounded-2xl p-5 space-y-3"
           style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text3)' }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text3)' }}>
             Your snapshot
           </p>
           {INSIGHT_CARDS.map(({ icon: Icon, label, value, desc, color, bg }) => (
-            <div key={label} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ background: bg }}>
-              <Icon size={16} style={{ color }} />
+            <div key={label} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: bg }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}15` }}>
+                <Icon size={16} style={{ color }} />
+              </div>
               <div>
-                <p className="text-[11px]" style={{ color: 'var(--c-text3)' }}>{label}</p>
-                <p className="text-[14px] font-bold num" style={{ color }}>
-                  {value} <span className="text-[11px] font-normal" style={{ color: 'var(--c-text3)' }}>{desc}</span>
+                <p className="text-[12px]" style={{ color: 'var(--c-text3)' }}>{label}</p>
+                <p className="text-[15px] font-bold num leading-tight" style={{ color }}>
+                  {value}{' '}
+                  <span className="text-[12px] font-normal" style={{ color: 'var(--c-text3)' }}>{desc}</span>
                 </p>
               </div>
             </div>
@@ -130,17 +137,17 @@ export default function AIAdvisor() {
         </div>
 
         {/* Suggestions */}
-        <div className="rounded-2xl p-4" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb size={13} style={{ color: '#F59E0B' }} />
+        <div className="rounded-2xl p-5" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb size={14} style={{ color: '#F59E0B' }} />
             <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text3)' }}>
               Try asking
             </p>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {SUGGESTIONS.map(s => (
               <button key={s} onClick={() => sendMessage(s)}
-                className="w-full text-left px-3 py-2 rounded-xl text-[12px] leading-snug transition-all"
+                className="w-full text-left px-3.5 py-2.5 rounded-xl text-[13px] leading-snug transition-all"
                 style={{ border: '1px solid var(--c-border)', color: 'var(--c-text2)', background: 'transparent' }}
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLElement
@@ -161,34 +168,34 @@ export default function AIAdvisor() {
         </div>
       </div>
 
-      {/* Chat panel */}
+      {/* ── Chat panel ──────────────────────────────── */}
       <div className="flex-1 flex flex-col rounded-2xl overflow-hidden"
         style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+        <div className="flex items-center gap-4 px-6 py-4 shrink-0"
           style={{ borderBottom: '1px solid var(--c-border)' }}>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-            <Sparkles size={15} className="text-white" />
+            <Sparkles size={18} className="text-white" />
           </div>
           <div>
-            <p className="text-[14px] font-semibold" style={{ color: 'var(--c-text)' }}>AI Advisor</p>
-            <p className="text-[11px]" style={{ color: '#10B981' }}>● Online</p>
+            <p className="text-[15px] font-semibold" style={{ color: 'var(--c-text)' }}>AI Advisor</p>
+            <p className="text-[12px]" style={{ color: '#10B981' }}>● Online</p>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
           <AnimatePresence initial={false}>
             {history.map((msg, i) => <ChatBubble key={i} msg={msg} />)}
           </AnimatePresence>
           {isTyping && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="flex gap-3">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-                <Sparkles size={14} className="text-white" />
+                <Sparkles size={15} className="text-white" />
               </div>
               <div className="rounded-2xl rounded-tl-sm"
                 style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
@@ -200,25 +207,25 @@ export default function AIAdvisor() {
         </div>
 
         {/* Mobile suggestions */}
-        <div className="lg:hidden flex gap-2 px-4 pb-2 overflow-x-auto shrink-0">
+        <div className="lg:hidden flex gap-2 px-5 pb-3 overflow-x-auto shrink-0">
           {SUGGESTIONS.slice(0, 3).map(s => (
             <button key={s} onClick={() => sendMessage(s)}
-              className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap"
+              className="shrink-0 px-4 py-2 rounded-full text-[12px] font-medium whitespace-nowrap"
               style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)', color: 'var(--c-text2)' }}>
               {s}
             </button>
           ))}
         </div>
 
-        {/* Input */}
-        <div className="px-4 py-3 shrink-0" style={{ borderTop: '1px solid var(--c-border)' }}>
-          <div className="flex items-end gap-2 px-4 py-2.5 rounded-2xl"
+        {/* Input area */}
+        <div className="px-5 py-4 shrink-0" style={{ borderTop: '1px solid var(--c-border)' }}>
+          <div className="flex items-end gap-3 px-5 py-3 rounded-2xl"
             style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
             <textarea
               ref={textareaRef}
               rows={1}
-              className="flex-1 text-[13px] resize-none bg-transparent focus:outline-none max-h-32"
-              style={{ color: 'var(--c-text)', lineHeight: '1.5' }}
+              className="flex-1 text-[15px] resize-none bg-transparent focus:outline-none max-h-32"
+              style={{ color: 'var(--c-text)', lineHeight: '1.55', paddingTop: '6px', paddingBottom: '6px' }}
               placeholder="Ask me anything about your finances…"
               value={input}
               onChange={e => {
@@ -231,12 +238,12 @@ export default function AIAdvisor() {
             <button onClick={() => sendMessage(input)}
               disabled={!input.trim() || isTyping}
               aria-label="Send"
-              className="w-8 h-8 flex items-center justify-center rounded-xl text-white transition-opacity disabled:opacity-40 shrink-0"
+              className="w-10 h-10 flex items-center justify-center rounded-xl text-white transition-all hover:opacity-90 hover:scale-105 disabled:opacity-40 disabled:scale-100 shrink-0"
               style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-              <Send size={15} />
+              <Send size={16} />
             </button>
           </div>
-          <p className="text-center text-[11px] mt-2" style={{ color: 'var(--c-text3)' }}>
+          <p className="text-center text-[12px] mt-2.5" style={{ color: 'var(--c-text3)' }}>
             AI advice is for informational purposes only.
           </p>
         </div>

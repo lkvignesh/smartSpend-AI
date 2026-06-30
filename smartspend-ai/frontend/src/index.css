@@ -16,6 +16,7 @@
   --c-text3:     #96A0B0;
   --c-shadow:    0 1px 3px rgba(17,24,39,0.07), 0 4px 16px rgba(37,99,235,0.07);
   --c-shadowlg:  0 2px 8px rgba(17,24,39,0.10), 0 16px 40px rgba(37,99,235,0.10);
+  --c-shadowxl:  0 4px 24px rgba(17,24,39,0.12), 0 24px 64px rgba(37,99,235,0.12);
 }
 
 .dark {
@@ -30,21 +31,53 @@
   --c-text3:     #525C6A;
   --c-shadow:    0 1px 3px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.35);
   --c-shadowlg:  0 2px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.45);
+  --c-shadowxl:  0 4px 24px rgba(0,0,0,0.7), 0 24px 64px rgba(0,0,0,0.55);
 }
 
 :root, .dark {
-  --c-primary: #2563EB;
+  --c-primary:   #2563EB;
   --c-primary-d: #1D4ED8;
-  --c-purple:  #7C3AED;
-  --c-cyan:    #06B6D4;
-  --c-success: #10B981;
-  --c-warning: #F59E0B;
-  --c-danger:  #EF4444;
+  --c-purple:    #7C3AED;
+  --c-cyan:      #06B6D4;
+  --c-success:   #10B981;
+  --c-warning:   #F59E0B;
+  --c-danger:    #EF4444;
+
+  /* 8-point design system */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+
+  --input-h: 52px;
+  --btn-h: 52px;
+  --btn-h-sm: 40px;
+  --topbar-h: 64px;
+  --sidebar-w: 256px;
+  --sidebar-w-collapsed: 72px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
 }
 
 /* ── Reset ─────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -53,11 +86,12 @@ body {
   line-height: 1.5;
   letter-spacing: -0.011em;
   transition: background 0.22s ease, color 0.22s ease;
+  font-size: 15px;
 }
 
 #root { min-height: 100vh; }
 
-/* ── Typography helpers ─────────────────────────── */
+/* ── Typography ─────────────────────────────────── */
 .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
 
 .grad-text {
@@ -67,31 +101,102 @@ body {
   background-clip: text;
 }
 
-/* ── Scrollbar ──────────────────────────────────── */
+/* ── Form inputs ─────────────────────────────────── */
+.form-input {
+  height: var(--input-h);
+  border: 1px solid var(--c-border);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:hover:not(:focus) {
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.form-input:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+textarea.form-input {
+  height: auto;
+  min-height: 96px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+/* ── Primary button ─────────────────────────────── */
+.btn-primary {
+  height: var(--btn-h);
+  padding: 0 24px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: white;
+  background: linear-gradient(135deg, #2563EB, #7C3AED);
+  transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Ghost button ────────────────────────────────── */
+.btn-ghost {
+  height: var(--btn-h);
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-text2);
+  background: transparent;
+  border: 1px solid var(--c-border);
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.05);
+  border-color: rgba(37, 99, 235, 0.25);
+  color: var(--c-text);
+}
+
+/* ── Scrollbar ───────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--c-text3); }
 
-/* ── Animations ─────────────────────────────────── */
+/* ── Animations ──────────────────────────────────── */
 @keyframes shimmer {
   from { background-position: 200% center; }
   to   { background-position: -200% center; }
-}
-
-@keyframes gradient-flow {
-  0%,100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
-}
-
-@keyframes float {
-  0%,100% { transform: translateY(0px); }
-  50%      { transform: translateY(-10px); }
-}
-
-@keyframes spin-once {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
 }
 
 .shimmer {
@@ -105,20 +210,11 @@ body {
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* ── Utility ────────────────────────────────────── */
+/* ── Utilities ───────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--c-primary);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-.form-input {
-  border: 1px solid var(--c-border);
-  transition: border-color 0.15s ease;
-}
-.form-input:focus {
-  border-color: var(--c-primary);
-  outline: none;
 }
 
 ::selection { background: rgba(37, 99, 235, 0.15); }
@@ -126,6 +222,11 @@ body {
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 input[type=number] { -moz-appearance: textfield; }
+
+input[type=date]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

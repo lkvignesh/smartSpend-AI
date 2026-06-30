@@ -20,12 +20,12 @@ const CATS = [
 
 const PMETHODS = ['UPI', 'Cash', 'Credit Card', 'Debit Card', 'Net Banking', 'Wallet']
 
-const INPUT_CLS = `w-full px-4 py-3 text-[13px] rounded-xl transition-colors focus:outline-none`
+const INPUT_CLS = 'w-full px-4 text-[15px] rounded-xl transition-colors focus:outline-none'
 
 function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+      <label className="block text-[12px] font-semibold uppercase tracking-wide mb-2"
         style={{ color: 'var(--c-text3)' }}>{label}</label>
       {children}
       {error && <p className="mt-1.5 text-[12px]" style={{ color: '#EF4444' }}>{error}</p>}
@@ -65,34 +65,36 @@ function AddDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
           />
           <motion.div
             className="fixed right-0 top-0 h-full z-50 flex flex-col"
-            style={{ width: 'min(440px, 100vw)', background: 'var(--c-surface)', borderLeft: '1px solid var(--c-border)', boxShadow: 'var(--c-shadowlg)' }}
+            style={{ width: 'min(460px, 100vw)', background: 'var(--c-surface)', borderLeft: '1px solid var(--c-border)', boxShadow: 'var(--c-shadowlg)' }}
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 280, damping: 32 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 shrink-0"
+            <div className="flex items-center justify-between px-6 py-5 shrink-0"
               style={{ borderBottom: '1px solid var(--c-border)' }}>
               <div>
-                <h2 className="font-semibold text-[15px]" style={{ color: 'var(--c-text)' }}>Add expense</h2>
-                <p className="text-[12px] mt-0.5" style={{ color: 'var(--c-text3)' }}>Record a new transaction</p>
+                <h2 className="font-bold text-[18px] tracking-tight" style={{ color: 'var(--c-text)' }}>Add expense</h2>
+                <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>Record a new transaction</p>
               </div>
               <button onClick={onClose} aria-label="Close"
-                className="w-8 h-8 flex items-center justify-center rounded-xl transition-colors hover:bg-[rgba(239,68,68,0.08)]"
+                className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors hover:bg-[rgba(239,68,68,0.08)]"
                 style={{ color: 'var(--c-text3)' }}>
                 <X size={18} />
               </button>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
               <FormField label="Title" error={errors.title ? 'Required' : undefined}>
-                <input className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="e.g. Lunch at cafe"
+                <input className={`${INPUT_CLS} form-input`} style={inputStyle}
+                  placeholder="e.g. Lunch at cafe"
                   {...register('title', { required: true })} />
               </FormField>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <FormField label="Amount (₹)" error={errors.amount ? 'Required' : undefined}>
-                  <input type="number" step="0.01" className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="0.00"
+                  <input type="number" step="0.01" className={`${INPUT_CLS} form-input`} style={inputStyle}
+                    placeholder="0.00"
                     {...register('amount', { required: true, min: 0 })} />
                 </FormField>
                 <FormField label="Date">
@@ -110,7 +112,8 @@ function AddDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
               </FormField>
 
               <FormField label="Merchant (optional)">
-                <input className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="e.g. Swiggy"
+                <input className={`${INPUT_CLS} form-input`} style={inputStyle}
+                  placeholder="e.g. Swiggy"
                   {...register('merchant')} />
               </FormField>
 
@@ -121,17 +124,14 @@ function AddDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
               </FormField>
             </form>
 
-            {/* Footer CTA */}
-            <div className="px-6 py-4 shrink-0" style={{ borderTop: '1px solid var(--c-border)' }}>
+            {/* Footer */}
+            <div className="px-6 py-5 shrink-0" style={{ borderTop: '1px solid var(--c-border)' }}>
               <div className="flex gap-3">
-                <button type="button" onClick={onClose}
-                  className="flex-none px-5 py-3 rounded-xl text-[13px] font-semibold transition-colors"
-                  style={{ border: '1px solid var(--c-border)', color: 'var(--c-text2)', background: 'transparent' }}>
+                <button type="button" onClick={onClose} className="btn-ghost flex-none">
                   Cancel
                 </button>
                 <button onClick={handleSubmit(onSubmit)} disabled={createExpense.isPending}
-                  className="flex-1 py-3 rounded-xl text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+                  className="btn-primary flex-1">
                   {createExpense.isPending ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -174,32 +174,34 @@ export default function Expenses() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
+
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-bold" style={{ color: 'var(--c-text)' }}>Expenses</h1>
-          <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
+          <h1 className="text-[40px] font-bold tracking-tight leading-none" style={{ color: 'var(--c-text)' }}>
+            Expenses
+          </h1>
+          <p className="text-[15px] mt-2" style={{ color: 'var(--c-text3)' }}>
             {list.length} transactions this month
           </p>
         </div>
-        <button onClick={() => setDrawerOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
-          style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-          <Plus size={15} />
+        <button onClick={() => setDrawerOpen(true)} className="btn-primary shrink-0">
+          <Plus size={18} />
           Add expense
         </button>
       </div>
 
       {/* Filters */}
-      <div className="rounded-2xl p-4 space-y-3"
+      <div className="rounded-2xl p-5 space-y-4"
         style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+
         {/* Search */}
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl"
-          style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
-          <Search size={14} style={{ color: 'var(--c-text3)' }} />
+        <div className="flex items-center gap-3 px-4 rounded-xl"
+          style={{ height: 48, background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
+          <Search size={16} style={{ color: 'var(--c-text3)' }} />
           <input
-            className="flex-1 text-[13px] bg-transparent focus:outline-none"
+            className="flex-1 text-[14px] bg-transparent focus:outline-none"
             style={{ color: 'var(--c-text)' }}
             placeholder="Search transactions…"
             value={search}
@@ -207,15 +209,16 @@ export default function Expenses() {
           />
           {search && (
             <button onClick={() => setSearch('')} style={{ color: 'var(--c-text3)' }}>
-              <X size={13} />
+              <X size={14} />
             </button>
           )}
         </div>
+
         {/* Category chips */}
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setCatFilter(null)}
-            className="px-3 py-1 rounded-full text-[12px] font-medium transition-colors"
+            className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors"
             style={{
               background: !catFilter ? 'linear-gradient(135deg, #2563EB, #7C3AED)' : 'var(--c-s2)',
               color: !catFilter ? 'white' : 'var(--c-text2)',
@@ -226,7 +229,7 @@ export default function Expenses() {
           {CATS.map(c => (
             <button key={c.name}
               onClick={() => setCatFilter(catFilter === c.name ? null : c.name)}
-              className="px-3 py-1 rounded-full text-[12px] font-medium transition-colors"
+              className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors"
               style={{
                 background: catFilter === c.name ? c.color : 'var(--c-s2)',
                 color: catFilter === c.name ? 'white' : 'var(--c-text2)',
@@ -261,42 +264,51 @@ export default function Expenses() {
                     key={String(e?.id ?? idx)}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="flex items-center gap-3.5 px-5 py-3.5 group"
-                    style={{ background: 'transparent' }}
-                    onMouseEnter={e2 => ((e2.currentTarget as HTMLElement).style.background = 'var(--c-s2)')}
-                    onMouseLeave={e2 => ((e2.currentTarget as HTMLElement).style.background = 'transparent')}
+                    className="flex items-center gap-4 px-6 group"
+                    style={{ minHeight: 64, background: 'transparent' }}
+                    onMouseEnter={ev => ((ev.currentTarget as HTMLElement).style.background = 'var(--c-s2)')}
+                    onMouseLeave={ev => ((ev.currentTarget as HTMLElement).style.background = 'transparent')}
                   >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
-                      style={{ background: cat ? `${cat.color}18` : 'var(--c-s2)' }}>
+                    {/* Category icon */}
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                      style={{ background: cat ? `${cat.color}15` : 'var(--c-s2)' }}>
                       {cat?.emoji ?? '📦'}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium truncate" style={{ color: 'var(--c-text)' }}>
+
+                    {/* Title + meta */}
+                    <div className="flex-1 min-w-0 py-4">
+                      <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--c-text)' }}>
                         {String(e?.title || '')}
                       </p>
-                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
+                      <p className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--c-text3)' }}>
                         {e?.date ? new Date(e.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : ''}
                         {e?.merchant ? ` · ${String(e.merchant)}` : ''}
                         {e?.payment_method ? ` · ${String(e.payment_method)}` : ''}
                       </p>
                     </div>
+
+                    {/* Category pill */}
                     {e?.category?.name && (
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 hidden sm:inline"
-                        style={{ background: cat ? `${cat.color}18` : 'var(--c-s2)', color: cat?.color ?? 'var(--c-text2)' }}>
+                      <span className="text-[12px] font-medium px-3 py-1 rounded-full shrink-0 hidden sm:inline"
+                        style={{ background: cat ? `${cat.color}15` : 'var(--c-s2)', color: cat?.color ?? 'var(--c-text2)' }}>
                         {String(e.category.name)}
                       </span>
                     )}
-                    <span className="text-[13px] font-bold num shrink-0" style={{ color: '#EF4444' }}>
+
+                    {/* Amount */}
+                    <span className="text-[15px] font-bold num shrink-0" style={{ color: '#EF4444' }}>
                       ₹{(Number(e?.amount) || 0).toLocaleString('en-IN')}
                     </span>
+
+                    {/* Delete */}
                     <button
                       onClick={() => handleDelete(e.id)}
                       aria-label="Delete expense"
-                      className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                      className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
                       style={{ color: '#EF4444', background: 'rgba(239,68,68,0.08)' }}>
-                      <Trash2 size={13} />
+                      <Trash2 size={14} />
                     </button>
                   </motion.div>
                 )
