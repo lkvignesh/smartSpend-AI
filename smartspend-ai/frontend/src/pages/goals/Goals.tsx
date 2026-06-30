@@ -142,9 +142,7 @@ function AddGoalDrawer({ open, onClose }: { open: boolean; onClose: () => void }
     )
   }
 
-  const inputStyle = { background: 'var(--c-s2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }
-  const focus = (e: React.FocusEvent<any>) => (e.target.style.borderColor = '#2563EB')
-  const blur  = (e: React.FocusEvent<any>) => (e.target.style.borderColor = 'var(--c-border)')
+  const inputStyle = { background: 'var(--c-s2)', color: 'var(--c-text)' }
 
   return (
     <AnimatePresence>
@@ -176,8 +174,7 @@ function AddGoalDrawer({ open, onClose }: { open: boolean; onClose: () => void }
               <div>
                 <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
                   style={{ color: 'var(--c-text3)' }}>Goal name</label>
-                <input className={INPUT_CLS} style={inputStyle} placeholder="e.g. Emergency fund"
-                  onFocus={focus} onBlur={blur}
+                <input className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="e.g. Emergency fund"
                   {...register('name', { required: true })} />
                 {errors.name && <p className="mt-1 text-[12px] text-red-500">Required</p>}
               </div>
@@ -186,16 +183,14 @@ function AddGoalDrawer({ open, onClose }: { open: boolean; onClose: () => void }
                 <div>
                   <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
                     style={{ color: 'var(--c-text3)' }}>Target (₹)</label>
-                  <input type="number" step="1" className={INPUT_CLS} style={inputStyle} placeholder="50000"
-                    onFocus={focus} onBlur={blur}
+                  <input type="number" step="1" className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="50000"
                     {...register('target_amount', { required: true, min: 1 })} />
                   {errors.target_amount && <p className="mt-1 text-[12px] text-red-500">Required</p>}
                 </div>
                 <div>
                   <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
                     style={{ color: 'var(--c-text3)' }}>Saved so far (₹)</label>
-                  <input type="number" step="1" className={INPUT_CLS} style={inputStyle} placeholder="0"
-                    onFocus={focus} onBlur={blur}
+                  <input type="number" step="1" className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="0"
                     {...register('current_amount')} />
                 </div>
               </div>
@@ -203,17 +198,15 @@ function AddGoalDrawer({ open, onClose }: { open: boolean; onClose: () => void }
               <div>
                 <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
                   style={{ color: 'var(--c-text3)' }}>Deadline (optional)</label>
-                <input type="date" className={INPUT_CLS} style={inputStyle}
-                  onFocus={focus} onBlur={blur}
+                <input type="date" className={`${INPUT_CLS} form-input`} style={inputStyle}
                   {...register('deadline')} />
               </div>
 
               <div>
                 <label className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
                   style={{ color: 'var(--c-text3)' }}>Description (optional)</label>
-                <textarea rows={3} className={INPUT_CLS} style={{ ...inputStyle, resize: 'none' }}
+                <textarea rows={3} className={`${INPUT_CLS} form-input`} style={{ ...inputStyle, resize: 'none' }}
                   placeholder="Why is this goal important to you?"
-                  onFocus={focus} onBlur={blur}
                   {...register('description')} />
               </div>
             </form>

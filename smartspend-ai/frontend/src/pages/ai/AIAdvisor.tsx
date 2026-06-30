@@ -7,7 +7,7 @@ const EASE_CUSTOM = [0.25, 0.1, 0.25, 1] as [number,number,number,number]
 
 const SUGGESTIONS = [
   'How can I reduce my monthly expenses?',
-  'What's a good savings rate for my income?',
+  "What's a good savings rate for my income?",
   'Help me create a budget plan',
   'How do I start investing?',
   'Tips for reaching my savings goals faster',
@@ -83,7 +83,7 @@ export default function AIAdvisor() {
     setIsTyping(true)
 
     aiChat.mutate(
-      { message: text.trim(), history },
+      text.trim(),
       {
         onSuccess: (data: any) => {
           const reply = String(data?.response || data?.message || 'Let me check that for you.')

@@ -112,6 +112,15 @@ body {
   border-radius: 4px;
 }
 
+.form-input {
+  border: 1px solid var(--c-border);
+  transition: border-color 0.15s ease;
+}
+.form-input:focus {
+  border-color: var(--c-primary);
+  outline: none;
+}
+
 ::selection { background: rgba(37, 99, 235, 0.15); }
 
 input[type=number]::-webkit-inner-spin-button,

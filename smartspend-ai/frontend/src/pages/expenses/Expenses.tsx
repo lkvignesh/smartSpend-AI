@@ -51,11 +51,7 @@ function AddDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
     )
   }
 
-  const inputStyle = {
-    background: 'var(--c-s2)',
-    border: '1px solid var(--c-border)',
-    color: 'var(--c-text)',
-  }
+  const inputStyle = { background: 'var(--c-s2)', color: 'var(--c-text)' }
 
   return (
     <AnimatePresence>
@@ -90,49 +86,37 @@ function AddDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               <FormField label="Title" error={errors.title ? 'Required' : undefined}>
-                <input className={INPUT_CLS} style={inputStyle} placeholder="e.g. Lunch at cafe"
-                  onFocus={e => e.target.style.borderColor = '#2563EB'}
-                  onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                <input className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="e.g. Lunch at cafe"
                   {...register('title', { required: true })} />
               </FormField>
 
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Amount (₹)" error={errors.amount ? 'Required' : undefined}>
-                  <input type="number" step="0.01" className={INPUT_CLS} style={inputStyle} placeholder="0.00"
-                    onFocus={e => e.target.style.borderColor = '#2563EB'}
-                    onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                  <input type="number" step="0.01" className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="0.00"
                     {...register('amount', { required: true, min: 0 })} />
                 </FormField>
                 <FormField label="Date">
-                  <input type="date" className={INPUT_CLS} style={inputStyle}
+                  <input type="date" className={`${INPUT_CLS} form-input`} style={inputStyle}
                     defaultValue={new Date().toISOString().split('T')[0]}
-                    onFocus={e => e.target.style.borderColor = '#2563EB'}
-                    onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
                     {...register('date', { required: true })} />
                 </FormField>
               </div>
 
               <FormField label="Payment method">
-                <select className={INPUT_CLS} style={inputStyle}
-                  onFocus={e => e.target.style.borderColor = '#2563EB'}
-                  onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                <select className={`${INPUT_CLS} form-input`} style={inputStyle}
                   {...register('payment_method')}>
                   {PMETHODS.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </FormField>
 
               <FormField label="Merchant (optional)">
-                <input className={INPUT_CLS} style={inputStyle} placeholder="e.g. Swiggy"
-                  onFocus={e => e.target.style.borderColor = '#2563EB'}
-                  onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
+                <input className={`${INPUT_CLS} form-input`} style={inputStyle} placeholder="e.g. Swiggy"
                   {...register('merchant')} />
               </FormField>
 
               <FormField label="Notes (optional)">
-                <textarea rows={3} className={INPUT_CLS} style={{ ...inputStyle, resize: 'none' }}
+                <textarea rows={3} className={`${INPUT_CLS} form-input`} style={{ ...inputStyle, resize: 'none' }}
                   placeholder="Any additional details…"
-                  onFocus={e => e.target.style.borderColor = '#2563EB'}
-                  onBlur={e => e.target.style.borderColor = 'var(--c-border)'}
                   {...register('notes')} />
               </FormField>
             </form>
