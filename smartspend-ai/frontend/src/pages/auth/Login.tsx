@@ -1,213 +1,261 @@
-import { useState, forwardRef } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Sparkles, TrendingUp, Shield, Zap } from 'lucide-react'
+import { TrendingUp, Sparkles, Shield, Zap, BarChart3, Brain } from 'lucide-react'
+import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 
 const FEATURES = [
-  { Icon: TrendingUp, title: 'AI-powered insights', desc: 'Understand your spending with intelligent pattern recognition.' },
-  { Icon: Shield,     title: 'Bank-grade security',  desc: 'Your financial data is encrypted end-to-end.' },
-  { Icon: Zap,        title: 'Real-time tracking',   desc: 'Every rupee tracked instantly across all categories.' },
+  { icon: Brain,    label: 'AI-Powered Insights',  desc: 'Get personalised financial advice' },
+  { icon: Shield,   label: 'Bank-Level Security',  desc: 'Your data is encrypted and safe' },
+  { icon: BarChart3, label: 'Smart Analytics',     desc: 'Understand your money deeply' },
+  { icon: Zap,      label: 'Real-Time Tracking',   desc: 'See spending as it happens' },
 ]
 
-const Field = forwardRef<HTMLInputElement, {
-  label: string; type: string; error?: string
-  toggle?: () => void; showToggle?: boolean; [k: string]: any
-}>(function Field({ label, type, error, toggle, showToggle, ...rest }, ref) {
+/* Animated background orbs */
+function BackgroundOrbs() {
   return (
-    <div>
-      <label className="block text-[13px] font-semibold mb-2" style={{ color: 'var(--c-text2)' }}>
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          ref={ref}
-          type={type}
-          className="form-input w-full px-4 text-[15px] rounded-xl focus:outline-none"
-          style={{
-            background: 'var(--c-s2)',
-            color: 'var(--c-text)',
-            paddingRight: showToggle ? '48px' : undefined,
-            borderColor: error ? '#EF4444' : undefined,
-          }}
-          {...rest}
-        />
-        {showToggle && toggle && (
-          <button type="button" onClick={toggle}
-            className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
-            style={{ color: 'var(--c-text3)' }} tabIndex={-1}>
-            {type === 'password' ? <Eye size={18} /> : <EyeOff size={18} />}
-          </button>
-        )}
-      </div>
-      {error && <p className="mt-1.5 text-[12px]" style={{ color: '#EF4444' }}>{error}</p>}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-20"
+        style={{ background: 'radial-gradient(circle, #3B82F6 0%, transparent 70%)' }} />
+      <div className="absolute -bottom-16 -right-16 w-80 h-80 rounded-full opacity-15"
+        style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full opacity-10"
+        style={{ background: 'radial-gradient(circle, #06B6D4 0%, transparent 70%)' }} />
+
+      {/* Grid overlay */}
+      <div className="absolute inset-0" style={{
+        backgroundImage: `
+          linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px)
+        `,
+        backgroundSize: '40px 40px',
+      }} />
     </div>
   )
-})
+}
+
+/* Stats ticker */
+function StatTicker() {
+  const stats = [
+    { value: '₹2.4L', label: 'Avg. savings/mo' },
+    { value: '12K+',  label: 'Active users' },
+    { value: '94%',   label: 'Satisfaction rate' },
+    { value: '3.2x',  label: 'Avg. savings growth' },
+  ]
+  return (
+    <div className="grid grid-cols-2 gap-3 mt-8">
+      {stats.map(({ value, label }) => (
+        <div key={label} className="rounded-xl px-4 py-3"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p className="text-[20px] font-bold text-white num">{value}</p>
+          <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function Login() {
   const { login, loginPending } = useAuth()
   const [loginError, setLoginError] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const {
+    register, handleSubmit, formState: { errors },
+  } = useForm<{ email: string; password: string }>()
 
-  const onSubmit = (data: any) => {
+  const onSubmit = handleSubmit(data => {
     setLoginError('')
-    login(data, { onError: () => setLoginError('Invalid email or password. Please try again.') })
-  }
+    login(data, {
+      onError: (e: any) => setLoginError(
+        e?.response?.data?.detail || 'Invalid credentials. Please try again.'
+      ),
+    })
+  })
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--c-bg)' }}>
+    <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
 
-      {/* ── Left hero panel ─────────────────────────── */}
+      {/* ── Left panel — hero ──────────────────── */}
       <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden flex-col justify-between p-14"
-        style={{ background: 'linear-gradient(145deg, #0B0C28 0%, #0F1844 40%, #0D1435 100%)' }}>
-
-        <div className="absolute top-[-80px] left-[-80px] w-[400px] h-[400px] rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, #2563EB 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[-60px] right-[-60px] w-[320px] h-[320px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #7C3AED 0%, transparent 70%)' }} />
-        <div className="absolute top-[45%] right-[8%] w-[200px] h-[200px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #06B6D4 0%, transparent 70%)' }} />
+        style={{ background: 'linear-gradient(150deg, #060918 0%, #0F1844 50%, #0A0F28 100%)' }}>
+        <BackgroundOrbs />
 
         {/* Logo */}
-        <div className="relative z-10 flex items-center gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-            <Sparkles size={17} className="text-white" />
+            style={{ background: 'var(--grad)' }}>
+            <TrendingUp size={18} className="text-white" />
           </div>
-          <span className="text-white font-bold text-[18px]">FinancePilot</span>
-        </div>
+          <span className="text-white font-bold text-[18px] tracking-tight">FinancePilot</span>
+          <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+            style={{ background: 'rgba(59,130,246,0.3)', border: '1px solid rgba(59,130,246,0.4)' }}>
+            AI
+          </span>
+        </motion.div>
 
-        {/* Headline + features */}
+        {/* Main copy */}
         <div className="relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}>
-            <h2 className="text-[44px] font-bold text-white leading-tight mb-4 tracking-tight text-balance">
-              Your finances,<br />finally intelligent.
+            transition={{ duration: 0.6, delay: 0.1 }}>
+            <p className="t-label mb-4" style={{ color: 'rgba(59,130,246,0.8)' }}>
+              Your AI Financial Copilot
+            </p>
+            <h2 className="text-[48px] font-bold text-white leading-[1.08] tracking-tight mb-5">
+              Take control of your{' '}
+              <span style={{ background: 'var(--grad)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                financial future.
+              </span>
             </h2>
-            <p className="text-[16px] leading-relaxed mb-12" style={{ color: 'rgba(255,255,255,0.50)' }}>
-              AI-powered tracking that actually understands your money.
+            <p className="text-[16px] leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              The only finance app that thinks with you. Track, plan, and grow your wealth with AI-powered guidance.
             </p>
 
-            <div className="space-y-5">
-              {FEATURES.map(({ Icon, title, desc }, i) => (
-                <motion.div key={title}
-                  initial={{ opacity: 0, x: -16 }}
+            {/* Features */}
+            <div className="space-y-3">
+              {FEATURES.map(({ icon: Icon, label, desc }, i) => (
+                <motion.div
+                  key={label}
+                  initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.18 + i * 0.1 }}
-                  className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)' }}>
-                    <Icon size={18} className="text-blue-400" />
+                  transition={{ delay: 0.25 + i * 0.08, duration: 0.35 }}
+                  className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                    <Icon size={14} style={{ color: '#3B82F6' }} />
                   </div>
                   <div>
-                    <p className="text-[14px] font-semibold text-white leading-tight">{title}</p>
-                    <p className="text-[13px] mt-1 leading-snug" style={{ color: 'rgba(255,255,255,0.40)' }}>{desc}</p>
+                    <span className="text-[13px] font-semibold text-white">{label}</span>
+                    <span className="text-[13px] ml-2" style={{ color: 'rgba(255,255,255,0.4)' }}>— {desc}</span>
                   </div>
                 </motion.div>
               ))}
             </div>
+            <StatTicker />
           </motion.div>
         </div>
 
-        <p className="relative z-10 text-[13px]" style={{ color: 'rgba(255,255,255,0.25)' }}>
-          Trusted by 10,000+ users across India
+        {/* Bottom */}
+        <p className="relative z-10 t-small" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          Trusted by thousands of users across India
         </p>
       </div>
 
-      {/* ── Right form panel ─────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10">
+      {/* ── Right panel — form ─────────────────── */}
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-          className="w-full max-w-[440px]">
+          transition={{ duration: 0.45, delay: 0.05 }}
+          className="w-full max-w-[400px]">
 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2.5 mb-10">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-              <Sparkles size={15} className="text-white" />
+              style={{ background: 'var(--grad)' }}>
+              <TrendingUp size={16} className="text-white" />
             </div>
-            <span className="font-bold text-[16px]" style={{ color: 'var(--c-text)' }}>FinancePilot</span>
+            <span className="font-bold text-[16px]" style={{ color: 'var(--text)' }}>FinancePilot</span>
           </div>
 
-          <h1 className="text-[32px] font-bold tracking-tight mb-1.5" style={{ color: 'var(--c-text)' }}>
-            Welcome back
-          </h1>
-          <p className="text-[15px] mb-8" style={{ color: 'var(--c-text2)' }}>Sign in to your account</p>
+          {/* Heading */}
+          <div className="mb-8">
+            <h1 className="t-section font-bold tracking-tight mb-2" style={{ color: 'var(--text)' }}>
+              Welcome back
+            </h1>
+            <p className="t-body" style={{ color: 'var(--text2)' }}>
+              Sign in to your account to continue
+            </p>
+          </div>
 
+          {/* Error */}
           {loginError && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 px-4 py-3.5 rounded-xl text-[14px]"
-              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444' }}>
+              className="mb-5 px-4 py-3.5 rounded-xl t-body"
+              style={{
+                background: 'var(--danger-dim)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                color: 'var(--danger)',
+              }}>
               {loginError}
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <Field
+          {/* Form */}
+          <form onSubmit={onSubmit} className="space-y-5">
+            <Input
               label="Email address"
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
               error={errors.email?.message as string}
-              {...register('email', { required: 'Email is required' })}
+              {...register('email', {
+                required: 'Email is required',
+                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Enter a valid email' },
+              })}
             />
-            <Field
+
+            <Input
               label="Password"
-              type={showPw ? 'text' : 'password'}
+              type="password"
               autoComplete="current-password"
               placeholder="Enter your password"
               error={errors.password?.message as string}
-              showToggle
-              toggle={() => setShowPw(v => !v)}
               {...register('password', { required: 'Password is required' })}
             />
 
+            {/* Remember me + forgot */}
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded accent-[#2563EB]" />
-                <span className="text-[14px]" style={{ color: 'var(--c-text2)' }}>Remember me</span>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 rounded accent-[var(--primary)]" />
+                <span className="t-body" style={{ color: 'var(--text2)' }}>Remember me</span>
               </label>
-              <Link to="/auth/forgot" tabIndex={-1}
-                className="text-[14px] font-semibold hover:underline"
-                style={{ color: '#2563EB' }}>
+              <Link to="#" className="t-body font-medium transition-colors hover:underline"
+                style={{ color: 'var(--primary)' }}>
                 Forgot password?
               </Link>
             </div>
 
-            <button type="submit" disabled={loginPending} className="btn-primary w-full mt-2">
-              {loginPending ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  Signing in…
-                </span>
-              ) : 'Sign in'}
-            </button>
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              loading={loginPending}
+              size="lg"
+              className="mt-2">
+              Sign in to FinancePilot
+            </Button>
           </form>
 
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full" style={{ borderTop: '1px solid var(--c-border)' }} />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-3 text-[13px]" style={{ background: 'var(--c-bg)', color: 'var(--c-text3)' }}>
-                New to FinancePilot?
-              </span>
-            </div>
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px" style={{ background: 'var(--border2)' }} />
+            <span className="t-small" style={{ color: 'var(--text3)' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: 'var(--border2)' }} />
           </div>
 
-          <Link to="/auth/register"
-            className="btn-ghost w-full">
-            Create a free account
-          </Link>
+          {/* Sign up CTA */}
+          <p className="text-center t-body" style={{ color: 'var(--text2)' }}>
+            Don't have an account?{' '}
+            <Link to="/auth/register"
+              className="font-semibold hover:underline"
+              style={{ color: 'var(--primary)' }}>
+              Create one free
+            </Link>
+          </p>
+
+          <p className="text-center t-small mt-6" style={{ color: 'var(--text3)' }}>
+            By signing in, you agree to our Terms & Privacy Policy
+          </p>
         </motion.div>
       </div>
     </div>

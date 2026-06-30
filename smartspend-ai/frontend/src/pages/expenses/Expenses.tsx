@@ -1,324 +1,311 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, X, Search } from 'lucide-react'
+import { Plus, Trash2, Search, Filter, X, ReceiptText } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useExpenses, useCreateExpense, useDeleteExpense } from '@/hooks/useFinance'
-import { TransactionRowSkeleton } from '@/components/ui/Skeleton'
+import { Input, Select } from '@/components/ui/Input'
+import { Button }  from '@/components/ui/Button'
+import { Badge }   from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { TransactionSkeleton } from '@/components/ui/Skeleton'
+import { Dialog }  from '@/components/ui/Dialog'
 import { useToast } from '@/components/ui/Toast'
+import { formatINR, formatDateShort, CATEGORY_COLORS, CATEGORY_EMOJIS } from '@/lib/utils'
 
-const CATS = [
-  { name: 'Food',          color: '#EF4444', emoji: '🍽' },
-  { name: 'Travel',        color: '#F59E0B', emoji: '✈' },
-  { name: 'Shopping',      color: '#7C3AED', emoji: '🛍' },
-  { name: 'Entertainment', color: '#06B6D4', emoji: '🎬' },
-  { name: 'Healthcare',    color: '#10B981', emoji: '💊' },
-  { name: 'Utilities',     color: '#6B7280', emoji: '⚡' },
-  { name: 'Education',     color: '#2563EB', emoji: '📚' },
-  { name: 'Other',         color: '#9CA3AF', emoji: '📦' },
+const CATEGORIES = [
+  'food', 'transport', 'entertainment', 'utilities',
+  'shopping', 'health', 'education', 'travel', 'other',
 ]
 
-const PMETHODS = ['UPI', 'Cash', 'Credit Card', 'Debit Card', 'Net Banking', 'Wallet']
+type ExpenseForm = {
+  description: string
+  amount: number
+  category: string
+  date: string
+}
 
-const INPUT_CLS = 'w-full px-4 text-[15px] rounded-xl transition-colors focus:outline-none'
-
-function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function CategoryChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  const color = CATEGORY_COLORS[label] ?? '#6366F1'
+  const emoji = CATEGORY_EMOJIS[label] ?? '💳'
   return (
-    <div>
-      <label className="block text-[12px] font-semibold uppercase tracking-wide mb-2"
-        style={{ color: 'var(--c-text3)' }}>{label}</label>
-      {children}
-      {error && <p className="mt-1.5 text-[12px]" style={{ color: '#EF4444' }}>{error}</p>}
-    </div>
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all whitespace-nowrap"
+      style={{
+        background: active ? `${color}20` : 'var(--card)',
+        border: `1px solid ${active ? color : 'var(--border2)'}`,
+        color: active ? color : 'var(--text2)',
+      }}>
+      <span>{emoji}</span>
+      <span className="capitalize">{label}</span>
+    </button>
   )
 }
 
-function AddDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const createExpense = useCreateExpense()
-  const toast = useToast()
-  const { register, handleSubmit, reset, formState: { errors } } = useForm()
-
-  const onSubmit = (data: any) => {
-    createExpense.mutate(
-      { ...data, amount: parseFloat(data.amount), date: new Date(data.date).toISOString() },
-      {
-        onSuccess: () => {
-          toast.success('Expense added', 'Your expense has been recorded.')
-          onClose(); reset()
-        },
-        onError: () => toast.error('Failed to add expense'),
-      }
-    )
-  }
-
-  const inputStyle = { background: 'var(--c-s2)', color: 'var(--c-text)' }
+function ExpenseRow({ expense, onDelete, delay }: { expense: any; onDelete: (id: any) => void; delay: number }) {
+  const cat   = (expense.category || 'other').toLowerCase()
+  const emoji = CATEGORY_EMOJIS[cat] || '💳'
+  const color = CATEGORY_COLORS[cat] || '#6366F1'
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            className="fixed inset-0 z-40"
-            style={{ background: 'rgba(0,0,0,0.45)' }}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          <motion.div
-            className="fixed right-0 top-0 h-full z-50 flex flex-col"
-            style={{ width: 'min(460px, 100vw)', background: 'var(--c-surface)', borderLeft: '1px solid var(--c-border)', boxShadow: 'var(--c-shadowlg)' }}
-            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 280, damping: 32 }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 shrink-0"
-              style={{ borderBottom: '1px solid var(--c-border)' }}>
-              <div>
-                <h2 className="font-bold text-[18px] tracking-tight" style={{ color: 'var(--c-text)' }}>Add expense</h2>
-                <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>Record a new transaction</p>
-              </div>
-              <button onClick={onClose} aria-label="Close"
-                className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors hover:bg-[rgba(239,68,68,0.08)]"
-                style={{ color: 'var(--c-text3)' }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
-              <FormField label="Title" error={errors.title ? 'Required' : undefined}>
-                <input className={`${INPUT_CLS} form-input`} style={inputStyle}
-                  placeholder="e.g. Lunch at cafe"
-                  {...register('title', { required: true })} />
-              </FormField>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField label="Amount (₹)" error={errors.amount ? 'Required' : undefined}>
-                  <input type="number" step="0.01" className={`${INPUT_CLS} form-input`} style={inputStyle}
-                    placeholder="0.00"
-                    {...register('amount', { required: true, min: 0 })} />
-                </FormField>
-                <FormField label="Date">
-                  <input type="date" className={`${INPUT_CLS} form-input`} style={inputStyle}
-                    defaultValue={new Date().toISOString().split('T')[0]}
-                    {...register('date', { required: true })} />
-                </FormField>
-              </div>
-
-              <FormField label="Payment method">
-                <select className={`${INPUT_CLS} form-input`} style={inputStyle}
-                  {...register('payment_method')}>
-                  {PMETHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </FormField>
-
-              <FormField label="Merchant (optional)">
-                <input className={`${INPUT_CLS} form-input`} style={inputStyle}
-                  placeholder="e.g. Swiggy"
-                  {...register('merchant')} />
-              </FormField>
-
-              <FormField label="Notes (optional)">
-                <textarea rows={3} className={`${INPUT_CLS} form-input`} style={{ ...inputStyle, resize: 'none' }}
-                  placeholder="Any additional details…"
-                  {...register('notes')} />
-              </FormField>
-            </form>
-
-            {/* Footer */}
-            <div className="px-6 py-5 shrink-0" style={{ borderTop: '1px solid var(--c-border)' }}>
-              <div className="flex gap-3">
-                <button type="button" onClick={onClose} className="btn-ghost flex-none">
-                  Cancel
-                </button>
-                <button onClick={handleSubmit(onSubmit)} disabled={createExpense.isPending}
-                  className="btn-primary flex-1">
-                  {createExpense.isPending ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      Saving…
-                    </span>
-                  ) : 'Save expense'}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ delay, duration: 0.22 }}
+      className="flex items-center gap-4 p-4 rounded-xl group transition-colors hover:bg-[var(--card2)]"
+      style={{ border: '1px solid var(--border)' }}>
+      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
+        style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
+        {emoji}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--text)' }}>
+          {expense.description || expense.category || 'Expense'}
+        </p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="t-small capitalize" style={{ color: 'var(--text3)' }}>{cat}</span>
+          <span className="t-small" style={{ color: 'var(--border3)' }}>·</span>
+          <span className="t-small" style={{ color: 'var(--text3)' }}>
+            {formatDateShort(expense.date || expense.created_at)}
+          </span>
+        </div>
+      </div>
+      <p className="text-[16px] font-bold num shrink-0" style={{ color: 'var(--danger)' }}>
+        -{formatINR(expense.amount)}
+      </p>
+      <button
+        onClick={() => onDelete(expense.id)}
+        className="w-8 h-8 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-[var(--danger-dim)]"
+        style={{ color: 'var(--text3)' }}>
+        <Trash2 size={14} />
+      </button>
+    </motion.div>
   )
 }
 
 export default function Expenses() {
-  const { data: rawExpenses, isLoading } = useExpenses()
-  const deleteExpense = useDeleteExpense()
+  const [open,        setOpen]        = useState(false)
+  const [search,      setSearch]      = useState('')
+  const [activecat,   setActiveCat]   = useState<string | null>(null)
+  const [searchOpen,  setSearchOpen]  = useState(false)
   const toast = useToast()
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const [catFilter, setCatFilter] = useState<string | null>(null)
 
-  const list = Array.isArray(rawExpenses) ? rawExpenses : []
+  const { data: expenses, isLoading } = useExpenses()
+  const { mutate: create, isPending: creating } = useCreateExpense()
+  const { mutate: remove } = useDeleteExpense()
 
-  const filtered = list.filter((e: any) => {
-    const matchesSearch = !search ||
-      String(e?.title || '').toLowerCase().includes(search.toLowerCase()) ||
-      String(e?.merchant || '').toLowerCase().includes(search.toLowerCase())
-    const matchesCat = !catFilter || (e?.category?.name === catFilter)
-    return matchesSearch && matchesCat
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<ExpenseForm>({
+    defaultValues: { date: new Date().toISOString().slice(0, 10) },
+  })
+
+  const list: any[] = Array.isArray(expenses) ? expenses : (expenses as any)?.expenses ?? []
+
+  const filtered = useMemo(() => {
+    let out = list
+    if (activecat) out = out.filter(e => e.category?.toLowerCase() === activecat)
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      out = out.filter(e =>
+        e.description?.toLowerCase().includes(q) ||
+        e.category?.toLowerCase().includes(q)
+      )
+    }
+    return out
+  }, [list, activecat, search])
+
+  const totalShown = filtered.reduce((s: number, e: any) => s + Number(e.amount), 0)
+
+  const onSubmit = handleSubmit(data => {
+    create({ ...data, amount: Number(data.amount) }, {
+      onSuccess: () => {
+        toast.success('Expense added')
+        reset({ date: new Date().toISOString().slice(0, 10) })
+        setOpen(false)
+      },
+      onError: () => toast.error('Failed to add expense'),
+    })
   })
 
   const handleDelete = (id: any) => {
-    deleteExpense.mutate(id, {
-      onSuccess: () => toast.success('Expense deleted'),
-      onError: () => toast.error('Failed to delete'),
+    remove(id, {
+      onSuccess: () => toast.success('Expense removed'),
+      onError:   () => toast.error('Failed to remove'),
     })
   }
 
   return (
-    <div className="space-y-8">
+    <>
+      <div className="space-y-7">
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--c-text)' }}>
-            Expenses
-          </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: 'var(--c-text3)' }}>
-            {list.length} transactions this month
-          </p>
-        </div>
-        <button onClick={() => setDrawerOpen(true)} className="btn-primary shrink-0">
-          <Plus size={16} />
-          Add expense
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="rounded-2xl p-6 space-y-5"
-        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-
-        {/* Search */}
-        <div className="flex items-center gap-3 px-4 rounded-xl"
-          style={{ height: 48, background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
-          <Search size={16} style={{ color: 'var(--c-text3)' }} />
-          <input
-            className="flex-1 text-[14px] bg-transparent focus:outline-none"
-            style={{ color: 'var(--c-text)' }}
-            placeholder="Search transactions…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          {search && (
-            <button onClick={() => setSearch('')} style={{ color: 'var(--c-text3)' }}>
-              <X size={14} />
-            </button>
-          )}
+        {/* ── Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--text)' }}>Expenses</h1>
+            <p className="t-body mt-1" style={{ color: 'var(--text2)' }}>
+              Track and manage your spending
+            </p>
+          </div>
+          <Button variant="primary" onClick={() => setOpen(true)} size="lg">
+            <Plus size={16} /> Add Expense
+          </Button>
         </div>
 
-        {/* Category chips */}
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setCatFilter(null)}
-            className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors"
-            style={{
-              background: !catFilter ? 'linear-gradient(135deg, #2563EB, #7C3AED)' : 'var(--c-s2)',
-              color: !catFilter ? 'white' : 'var(--c-text2)',
-              border: catFilter ? '1px solid var(--c-border)' : 'none',
-            }}>
-            All
-          </button>
-          {CATS.map(c => (
-            <button key={c.name}
-              onClick={() => setCatFilter(catFilter === c.name ? null : c.name)}
-              className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors"
+        {/* ── Stats row ── */}
+        {!isLoading && list.length > 0 && (
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: 'Total',   value: formatINR(list.reduce((s: number, e: any) => s + Number(e.amount), 0)), color: 'var(--danger)' },
+              { label: 'Average', value: formatINR(list.reduce((s: number, e: any) => s + Number(e.amount), 0) / list.length), color: 'var(--primary)' },
+              { label: 'Count',   value: `${list.length} transactions`, color: 'var(--text)' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="fp-card p-4">
+                <p className="t-small mb-1" style={{ color: 'var(--text3)' }}>{label}</p>
+                <p className="text-[18px] font-bold num" style={{ color }}>{value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Filters ── */}
+        <div className="fp-card p-4">
+          <div className="flex items-center gap-3 mb-3">
+            {/* Search */}
+            <div className="flex items-center gap-2 flex-1 px-3.5 rounded-xl"
               style={{
-                background: catFilter === c.name ? c.color : 'var(--c-s2)',
-                color: catFilter === c.name ? 'white' : 'var(--c-text2)',
-                border: catFilter !== c.name ? '1px solid var(--c-border)' : 'none',
+                height: 40,
+                background: 'var(--card2)',
+                border: `1px solid ${searchOpen ? 'var(--primary)' : 'var(--border2)'}`,
+                boxShadow: searchOpen ? '0 0 0 3px var(--primary-dim)' : 'none',
               }}>
-              {c.emoji} {c.name}
+              <Search size={14} style={{ color: 'var(--text3)', flexShrink: 0 }} />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onFocus={() => setSearchOpen(true)}
+                onBlur={() => setSearchOpen(false)}
+                placeholder="Search expenses…"
+                className="flex-1 bg-transparent text-[13px] focus:outline-none"
+                style={{ color: 'var(--text)' }}
+              />
+              {search && (
+                <button onClick={() => setSearch('')} style={{ color: 'var(--text3)' }}>
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+            {/* Filter icon */}
+            <button
+              className="w-10 h-10 flex items-center justify-center rounded-xl transition-colors"
+              style={{
+                background: activecat ? 'var(--primary-dim)' : 'var(--card2)',
+                border: `1px solid ${activecat ? 'var(--primary)' : 'var(--border2)'}`,
+                color: activecat ? 'var(--primary)' : 'var(--text3)',
+              }}>
+              <Filter size={15} />
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Expense list */}
-      <div className="rounded-2xl overflow-hidden"
-        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+          {/* Category chips */}
+          <div className="flex gap-2 overflow-x-auto pb-1 fp-scroll">
+            <CategoryChip label="all" active={activecat === null} onClick={() => setActiveCat(null)} />
+            {CATEGORIES.map(cat => (
+              <CategoryChip
+                key={cat}
+                label={cat}
+                active={activecat === cat}
+                onClick={() => setActiveCat(activecat === cat ? null : cat)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Results header ── */}
+        {(search || activecat) && (
+          <div className="flex items-center justify-between">
+            <p className="t-small" style={{ color: 'var(--text3)' }}>
+              {filtered.length} result{filtered.length !== 1 ? 's' : ''} · {formatINR(totalShown)} total
+            </p>
+            <button onClick={() => { setSearch(''); setActiveCat(null) }}
+              className="t-small font-medium hover:underline flex items-center gap-1"
+              style={{ color: 'var(--primary)' }}>
+              <X size={12} /> Clear filters
+            </button>
+          </div>
+        )}
+
+        {/* ── List ── */}
         {isLoading ? (
-          <div className="divide-y" style={{ borderColor: 'var(--c-border2)' }}>
-            {[1,2,3,4,5].map(i => <TransactionRowSkeleton key={i} />)}
+          <div className="space-y-3">
+            {[0,1,2,3,4].map(i => <TransactionSkeleton key={i} />)}
           </div>
         ) : filtered.length === 0 ? (
           <EmptyState
-            title={search || catFilter ? 'No matching expenses' : 'No expenses yet'}
-            description={search || catFilter ? 'Try adjusting your filters.' : 'Add your first expense to start tracking.'}
-            action={!search && !catFilter ? { label: 'Add expense', onClick: () => setDrawerOpen(true) } : undefined}
+            icon={ReceiptText}
+            title={search || activecat ? 'No matching expenses' : 'No expenses yet'}
+            description={search || activecat
+              ? 'Try a different filter or search term'
+              : 'Add your first expense to start tracking your spending'}
+            action={{ label: 'Add Expense', onClick: () => setOpen(true) }}
           />
         ) : (
-          <div className="divide-y" style={{ borderColor: 'var(--c-border2)' }}>
-            <AnimatePresence initial={false}>
-              {filtered.map((e: any, idx: number) => {
-                const cat = CATS.find(c => c.name === (e?.category?.name ?? ''))
-                return (
-                  <motion.div
-                    key={String(e?.id ?? idx)}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center gap-4 px-6 group"
-                    style={{ minHeight: 64, background: 'transparent' }}
-                    onMouseEnter={ev => ((ev.currentTarget as HTMLElement).style.background = 'var(--c-s2)')}
-                    onMouseLeave={ev => ((ev.currentTarget as HTMLElement).style.background = 'transparent')}
-                  >
-                    {/* Category icon */}
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                      style={{ background: cat ? `${cat.color}15` : 'var(--c-s2)' }}>
-                      {cat?.emoji ?? '📦'}
-                    </div>
-
-                    {/* Title + meta */}
-                    <div className="flex-1 min-w-0 py-4">
-                      <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--c-text)' }}>
-                        {String(e?.title || '')}
-                      </p>
-                      <p className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--c-text3)' }}>
-                        {e?.date ? new Date(e.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : ''}
-                        {e?.merchant ? ` · ${String(e.merchant)}` : ''}
-                        {e?.payment_method ? ` · ${String(e.payment_method)}` : ''}
-                      </p>
-                    </div>
-
-                    {/* Category pill */}
-                    {e?.category?.name && (
-                      <span className="text-[12px] font-medium px-3 py-1 rounded-full shrink-0 hidden sm:inline"
-                        style={{ background: cat ? `${cat.color}15` : 'var(--c-s2)', color: cat?.color ?? 'var(--c-text2)' }}>
-                        {String(e.category.name)}
-                      </span>
-                    )}
-
-                    {/* Amount */}
-                    <span className="text-[15px] font-bold num shrink-0" style={{ color: '#EF4444' }}>
-                      ₹{(Number(e?.amount) || 0).toLocaleString('en-IN')}
-                    </span>
-
-                    {/* Delete */}
-                    <button
-                      onClick={() => handleDelete(e.id)}
-                      aria-label="Delete expense"
-                      className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-                      style={{ color: '#EF4444', background: 'rgba(239,68,68,0.08)' }}>
-                      <Trash2 size={14} />
-                    </button>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
-          </div>
+          <AnimatePresence mode="popLayout">
+            <div className="space-y-2.5">
+              {filtered.map((expense: any, i: number) => (
+                <ExpenseRow
+                  key={expense.id}
+                  expense={expense}
+                  onDelete={handleDelete}
+                  delay={Math.min(i * 0.04, 0.3)}
+                />
+              ))}
+            </div>
+          </AnimatePresence>
         )}
       </div>
 
-      <AddDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-    </div>
+      {/* ── Add Expense Dialog ── */}
+      <Dialog open={open} onClose={() => setOpen(false)} title="Add Expense" size="md">
+        <form onSubmit={onSubmit} className="space-y-5">
+          <Input
+            label="Description"
+            placeholder="e.g. Lunch at café"
+            error={errors.description?.message as string}
+            {...register('description', { required: 'Description is required' })}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Amount (₹)"
+              type="number"
+              placeholder="0.00"
+              error={errors.amount?.message as string}
+              {...register('amount', {
+                required: 'Amount is required',
+                min: { value: 0.01, message: 'Must be > 0' },
+              })}
+            />
+            <Input
+              label="Date"
+              type="date"
+              error={errors.date?.message as string}
+              {...register('date', { required: 'Date is required' })}
+            />
+          </div>
+          <Select
+            label="Category"
+            error={errors.category?.message as string}
+            {...register('category', { required: 'Category is required' })}>
+            <option value="">Select category</option>
+            {CATEGORIES.map(c => (
+              <option key={c} value={c} className="capitalize">{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+            ))}
+          </Select>
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="ghost" fullWidth onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" fullWidth loading={creating}>Add Expense</Button>
+          </div>
+        </form>
+      </Dialog>
+    </>
   )
 }

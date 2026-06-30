@@ -1,253 +1,250 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Send, TrendingUp, PiggyBank, AlertTriangle, Lightbulb } from 'lucide-react'
+import {
+  Sparkles, Send, TrendingUp, PiggyBank, AlertTriangle,
+  Lightbulb, Brain, RotateCcw, ChevronRight,
+} from 'lucide-react'
 import { useAIChat } from '@/hooks/useFinance'
+import { useAuth }   from '@/hooks/useAuth'
+import { Avatar }    from '@/components/ui/Avatar'
+import { Badge }     from '@/components/ui/Badge'
 
-const EASE_CUSTOM = [0.25, 0.1, 0.25, 1] as [number,number,number,number]
+interface Message { role: 'user' | 'assistant'; content: string; ts: number }
 
 const SUGGESTIONS = [
-  'How can I reduce my monthly expenses?',
-  "What's a good savings rate for my income?",
-  'Help me create a budget plan',
-  'How do I start investing?',
-  'Tips for reaching my savings goals faster',
-  'Analyze my spending patterns',
+  { icon: TrendingUp,    text: 'How can I reduce my monthly expenses?' },
+  { icon: PiggyBank,     text: 'What is the best way to start saving?' },
+  { icon: AlertTriangle, text: 'Am I spending too much on entertainment?' },
+  { icon: Lightbulb,     text: 'Give me a personalised budget plan' },
 ]
 
-const INSIGHT_CARDS = [
-  { icon: TrendingUp,    label: 'Spending trend', value: '+12%', desc: 'vs last month', color: '#EF4444', bg: 'rgba(239,68,68,0.08)'   },
-  { icon: PiggyBank,     label: 'Savings rate',   value: '28%',  desc: 'on track',      color: '#10B981', bg: 'rgba(16,185,129,0.08)'  },
-  { icon: AlertTriangle, label: 'Alerts',          value: '2',    desc: 'review needed', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)'  },
-]
-
-function TypingDots() {
+function UserBubble({ content, name }: { content: string; name: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-5 py-4">
-      {[0, 1, 2].map(i => (
-        <motion.div key={i} className="w-2 h-2 rounded-full"
-          style={{ background: '#2563EB' }}
-          animate={{ y: [0, -5, 0] }}
-          transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.15, ease: 'easeInOut' }} />
-      ))}
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-end justify-end gap-3">
+      <div
+        className="max-w-[70%] px-4 py-3 rounded-2xl rounded-br-md text-[14px] leading-relaxed"
+        style={{
+          background: 'var(--grad)',
+          color: 'white',
+          boxShadow: '0 3px 12px rgba(59,130,246,0.25)',
+        }}>
+        {content}
+      </div>
+      <Avatar name={name} size="sm" />
+    </motion.div>
   )
 }
 
-interface Message { role: 'user' | 'assistant'; content: string }
-
-function ChatBubble({ msg }: { msg: Message }) {
-  const isUser = msg.role === 'user'
+function AiBubble({ content, isTyping }: { content: string; isTyping?: boolean }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: EASE_CUSTOM }}
-      className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-
-      {!isUser && (
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-          style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-          <Sparkles size={15} className="text-white" />
-        </div>
-      )}
-
-      <div className={`max-w-[78%] px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+      className="flex items-end gap-3">
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: 'var(--grad)' }}>
+        <Brain size={14} className="text-white" />
+      </div>
+      <div
+        className="max-w-[70%] px-4 py-3 rounded-2xl rounded-bl-md text-[14px] leading-relaxed"
         style={{
-          background: isUser ? 'linear-gradient(135deg, #2563EB, #7C3AED)' : 'var(--c-s2)',
-          color: isUser ? 'white' : 'var(--c-text)',
-          border: isUser ? 'none' : '1px solid var(--c-border)',
+          background: 'var(--card2)',
+          border: '1px solid var(--border)',
+          color: 'var(--text)',
         }}>
-        {String(msg.content)}
+        {isTyping ? (
+          <div className="flex gap-1.5 py-1">
+            {[0,1,2].map(i => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full"
+                style={{ background: 'var(--primary)' }}
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
+              />
+            ))}
+          </div>
+        ) : content}
       </div>
     </motion.div>
   )
 }
 
 export default function AIAdvisor() {
-  const aiChat = useAIChat()
-  const [input, setInput]     = useState('')
-  const [history, setHistory] = useState<Message[]>([
-    { role: 'assistant', content: "Hi! I'm your AI financial advisor. Ask me anything about budgeting, saving, or investing — or pick a suggestion on the left." },
-  ])
-  const [isTyping, setIsTyping] = useState(false)
-  const bottomRef   = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { user } = useAuth()
+  const { mutate: chat, isPending } = useAIChat()
+  const [messages, setMessages]     = useState<Message[]>([])
+  const [input, setInput]           = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [history, isTyping])
+  }, [messages, isPending])
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return
-    const userMsg: Message = { role: 'user', content: text.trim() }
-    setHistory(prev => [...prev, userMsg])
+  const send = (text: string) => {
+    if (!text.trim() || isPending) return
+    const userMsg: Message = { role: 'user', content: text.trim(), ts: Date.now() }
+    setMessages(prev => [...prev, userMsg])
     setInput('')
-    if (textareaRef.current) textareaRef.current.style.height = 'auto'
-    setIsTyping(true)
 
-    aiChat.mutate(
-      text.trim(),
-      {
-        onSuccess: (data: any) => {
-          const reply = String(data?.response || data?.message || 'Let me check that for you.')
-          setHistory(prev => [...prev, { role: 'assistant', content: reply }])
-          setIsTyping(false)
-        },
-        onError: () => {
-          setHistory(prev => [
-            ...prev,
-            { role: 'assistant', content: "Sorry, I couldn't connect right now. Please try again." },
-          ])
-          setIsTyping(false)
-        },
-      }
-    )
+    chat(text.trim(), {
+      onSuccess: (data: any) => {
+        const reply = data?.response || data?.message || data?.content
+          || 'I am here to help! Could you please rephrase your question?'
+        setMessages(prev => [...prev, { role: 'assistant', content: reply, ts: Date.now() }])
+      },
+      onError: () => {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: 'Sorry, I could not process that. Please try again.',
+          ts: Date.now(),
+        }])
+      },
+    })
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) }
+  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      send(input)
+    }
   }
+
+  const isEmpty = messages.length === 0
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-8rem)]">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - var(--topbar-h) - 80px)' }}>
 
-      {/* ── Left panel ──────────────────────────────── */}
-      <div className="hidden lg:flex w-64 shrink-0 flex-col gap-4 overflow-y-auto">
-
-        {/* Snapshot */}
-        <div className="rounded-2xl p-5"
-          style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--c-text3)' }}>
-            Your snapshot
-          </p>
-          <div className="space-y-1">
-            {INSIGHT_CARDS.map(({ icon: Icon, label, value, desc, color }) => (
-              <div key={label} className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                style={{ background: 'var(--c-s2)' }}>
-                <Icon size={15} style={{ color }} className="shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px]" style={{ color: 'var(--c-text3)' }}>{label}</p>
-                  <p className="text-[13px] font-bold num leading-tight" style={{ color }}>
-                    {value}{' '}
-                    <span className="text-[11px] font-normal" style={{ color: 'var(--c-text3)' }}>{desc}</span>
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Suggestions */}
-        <div className="rounded-2xl p-5" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Lightbulb size={13} style={{ color: '#F59E0B' }} />
-            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text3)' }}>
-              Try asking
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            {SUGGESTIONS.map(s => (
-              <button key={s} onClick={() => sendMessage(s)}
-                className="w-full text-left px-3 py-2 rounded-xl text-[12px] leading-snug transition-all"
-                style={{ border: '1px solid var(--c-border)', color: 'var(--c-text2)', background: 'transparent' }}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.background = 'rgba(37,99,235,0.06)'
-                  el.style.color = '#2563EB'
-                  el.style.borderColor = 'rgba(37,99,235,0.25)'
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.background = 'transparent'
-                  el.style.color = 'var(--c-text2)'
-                  el.style.borderColor = 'var(--c-border)'
-                }}>
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Chat panel ──────────────────────────────── */}
-      <div className="flex-1 flex flex-col rounded-2xl overflow-hidden"
-        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-
-        {/* Header */}
-        <div className="flex items-center gap-4 px-6 py-4 shrink-0"
-          style={{ borderBottom: '1px solid var(--c-border)' }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-            <Sparkles size={18} className="text-white" />
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between mb-6 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+            style={{ background: 'var(--grad)', boxShadow: '0 4px 16px rgba(59,130,246,0.3)' }}>
+            <Sparkles size={20} className="text-white" />
           </div>
           <div>
-            <p className="text-[15px] font-semibold" style={{ color: 'var(--c-text)' }}>AI Advisor</p>
-            <p className="text-[12px]" style={{ color: '#10B981' }}>● Online</p>
+            <h1 className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--text)' }}>
+              AI Financial Advisor
+            </h1>
+            <p className="t-small flex items-center gap-2" style={{ color: 'var(--text3)' }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse" />
+              Online · GPT-4 powered
+            </p>
           </div>
         </div>
+        {messages.length > 0 && (
+          <button
+            onClick={() => setMessages([])}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl t-small font-medium transition-colors hover:bg-[var(--card)]"
+            style={{ color: 'var(--text3)' }}>
+            <RotateCcw size={13} /> New chat
+          </button>
+        )}
+      </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-8 py-8 space-y-6">
-          <AnimatePresence initial={false}>
-            {history.map((msg, i) => <ChatBubble key={i} msg={msg} />)}
-          </AnimatePresence>
-          {isTyping && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="flex gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-                <Sparkles size={15} className="text-white" />
-              </div>
-              <div className="rounded-2xl rounded-tl-sm"
-                style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
-                <TypingDots />
-              </div>
-            </motion.div>
-          )}
-          <div ref={bottomRef} />
-        </div>
+      {/* ── Chat area ── */}
+      <div className="flex-1 overflow-y-auto fp-scroll min-h-0 rounded-2xl"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
 
-        {/* Mobile suggestions */}
-        <div className="lg:hidden flex gap-2 px-5 pb-3 overflow-x-auto shrink-0">
-          {SUGGESTIONS.slice(0, 3).map(s => (
-            <button key={s} onClick={() => sendMessage(s)}
-              className="shrink-0 px-4 py-2 rounded-full text-[12px] font-medium whitespace-nowrap"
-              style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)', color: 'var(--c-text2)' }}>
-              {s}
-            </button>
-          ))}
-        </div>
+        {isEmpty ? (
+          /* Welcome state */
+          <div className="flex flex-col items-center justify-center h-full px-8 py-12">
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
+              style={{ background: 'var(--grad)', boxShadow: '0 8px 32px rgba(59,130,246,0.3)' }}>
+              <Brain size={32} className="text-white" />
+            </div>
+            <h2 className="text-[22px] font-bold text-center mb-2" style={{ color: 'var(--text)' }}>
+              Your AI Financial Advisor
+            </h2>
+            <p className="t-body text-center max-w-sm mb-10" style={{ color: 'var(--text2)' }}>
+              Ask me anything about your finances. I can help with budgeting, savings goals, investment ideas, and more.
+            </p>
 
-        {/* Input area */}
-        <div className="px-5 py-4 shrink-0" style={{ borderTop: '1px solid var(--c-border)' }}>
-          <div className="flex items-end gap-3 px-5 py-3 rounded-2xl"
-            style={{ background: 'var(--c-s2)', border: '1px solid var(--c-border)' }}>
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              className="flex-1 text-[15px] resize-none bg-transparent focus:outline-none max-h-32"
-              style={{ color: 'var(--c-text)', lineHeight: '1.55', paddingTop: '6px', paddingBottom: '6px' }}
-              placeholder="Ask me anything about your finances…"
-              value={input}
-              onChange={e => {
-                setInput(e.target.value)
-                e.target.style.height = 'auto'
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`
-              }}
-              onKeyDown={handleKeyDown}
-            />
-            <button onClick={() => sendMessage(input)}
-              disabled={!input.trim() || isTyping}
-              aria-label="Send"
-              className="w-10 h-10 flex items-center justify-center rounded-xl text-white transition-all hover:opacity-90 hover:scale-105 disabled:opacity-40 disabled:scale-100 shrink-0"
-              style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
-              <Send size={16} />
-            </button>
+            {/* Suggestion chips */}
+            <div className="w-full max-w-lg space-y-2.5">
+              <p className="t-label text-center mb-3" style={{ color: 'var(--text3)' }}>SUGGESTED QUESTIONS</p>
+              {SUGGESTIONS.map(({ icon: Icon, text }) => (
+                <button
+                  key={text}
+                  onClick={() => send(text)}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all hover:bg-[var(--card2)] group"
+                  style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--primary-dim)' }}>
+                    <Icon size={15} style={{ color: 'var(--primary)' }} />
+                  </div>
+                  <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--text)' }}>{text}</span>
+                  <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ color: 'var(--text3)' }} />
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="text-center text-[12px] mt-2.5" style={{ color: 'var(--c-text3)' }}>
-            AI advice is for informational purposes only.
-          </p>
+        ) : (
+          /* Messages */
+          <div className="flex flex-col gap-5 p-6">
+            <AnimatePresence initial={false}>
+              {messages.map((msg, i) => (
+                msg.role === 'user'
+                  ? <UserBubble key={msg.ts} content={msg.content} name={user?.full_name ?? 'User'} />
+                  : <AiBubble key={msg.ts} content={msg.content} />
+              ))}
+              {isPending && (
+                <AiBubble key="typing" content="" isTyping />
+              )}
+            </AnimatePresence>
+            <div ref={bottomRef} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Input area ── */}
+      <div className="shrink-0 mt-4">
+        <div className="flex items-end gap-3 p-3 rounded-2xl"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border2)' }}>
+          <textarea
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="Ask your AI advisor anything…"
+            rows={1}
+            style={{
+              flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              resize: 'none',
+              fontSize: 14,
+              color: 'var(--text)',
+              lineHeight: '1.5',
+              padding: '8px 4px',
+              maxHeight: 120,
+              overflowY: 'auto',
+            }}
+            onInput={(e) => {
+              const el = e.currentTarget
+              el.style.height = 'auto'
+              el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+            }}
+          />
+          <motion.button
+            onClick={() => send(input)}
+            disabled={!input.trim() || isPending}
+            whileTap={{ scale: 0.92 }}
+            className="w-10 h-10 flex items-center justify-center rounded-xl shrink-0 transition-all disabled:opacity-40"
+            style={{
+              background: input.trim() && !isPending ? 'var(--grad)' : 'var(--card2)',
+              color: input.trim() && !isPending ? 'white' : 'var(--text3)',
+            }}>
+            <Send size={16} />
+          </motion.button>
         </div>
+        <p className="text-center t-small mt-2" style={{ color: 'var(--text3)' }}>
+          Press Enter to send · Shift+Enter for new line
+        </p>
       </div>
     </div>
   )
